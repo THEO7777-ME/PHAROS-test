@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LED Colorimeter</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fde4ef;--card:#fff5f9;--tx:#3a0f26;--mu:#8a4468;--bd:#f2bcd6;--ac:#d81b7a;--ok:#0b7a5b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#2a0f1e;--card:#3a1529;--tx:#ffe6f1;--mu:#e0a3c0;--bd:#5c2442;--ac:#ff6fb0;--ok:#3ddc9f}}
+:root[data-theme="dark"]{--bg:#2a0f1e;--card:#3a1529;--tx:#ffe6f1;--mu:#e0a3c0;--bd:#5c2442;--ac:#ff6fb0;--ok:#3ddc9f}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 "Instrument Sans",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+main{max-width:720px;margin:0 auto;padding:14px 14px 40px}
+h1{font-size:22px;margin:6px 0 2px;letter-spacing:-.01em}
+h2{font-size:15px;margin:0 0 10px}
+.sub{color:var(--mu);margin:0 0 14px}
+section{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:12px}
+canvas{display:block;width:100%;border-radius:6px;background:#000}
+#view{touch-action:none;aspect-ratio:4/3}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+button,.btn,select,input{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:7px;padding:8px 12px;min-height:40px}
+button,.btn{cursor:pointer;font-weight:600}
+button.p{background:var(--ac);border-color:var(--ac);color:#fff}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+input[type=range]{padding:0;min-height:32px;flex:1;min-width:120px}
+input[type=number]{width:110px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.k{border:1px solid var(--bd);border-radius:7px;padding:8px 10px}
+.k b{display:block;font-size:19px}
+.k span{color:var(--mu);font-size:12.5px}
+#sw{height:46px;border-radius:7px;border:1px solid var(--bd);margin-bottom:10px}
+.msg{color:var(--mu);margin:8px 0 0;min-height:1.4em}
+.warn{color:var(--ac);font-weight:600}
+.big{font-size:30px;font-weight:700;letter-spacing:-.02em}
+table{width:100%;border-collapse:collapse;margin-top:8px}
+td,th{text-align:left;padding:5px 4px;border-bottom:1px solid var(--bd)}
+.scroll{overflow-x:auto}
+textarea{width:100%;height:90px;font:12px monospace;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:7px;margin-top:8px}
+label{color:var(--mu);font-size:13px}
+</style></head><body><main>
+<h1>LED phosphate colorimeter</h1>
+<p class="sub">Point the camera at an LED (or its light through your sample). Tap the image to place the sampling circle, record a blank, then add standards to calibrate.</p>
+
+<section>
+<canvas id="view" aria-label="Camera view. Tap to place the sampling circle."></canvas>
+<div class="row">
+<button class="p" id="cam">Start camera</button>
+<button id="lock">Lock exposure</button><button id="flip">Flip camera</button><button id="stop">Stop</button><button id="torch" hidden>Torch</button>
+<label class="btn" for="file">Use a photo</label><input id="file" type="file" accept="image/*" hidden>
+</div>
+<div class="row"><label for="rad">Circle size</label><input id="rad" type="range" min="1" max="25" value="6"></div>
+<div class="row"><button id="refB">Place reference spot</button><label><input type="checkbox" id="refOn" style="min-height:auto"> Normalize to reference</label></div>
+<p class="msg">Optional: keep a neutral white spot (white LED or card) in view. Readings are divided by it, which cancels brightness and white-balance drift. Re-record the blank after switching this on or off.</p>
+<p class="msg" id="status">Camera is off.</p>
+</section>
+
+<section>
+<h2>Live reading</h2>
+<div id="sw"></div>
+<div class="grid">
+<div class="k"><span>Red</span><b id="vR">–</b></div>
+<div class="k"><span>Green</span><b id="vG">–</b></div>
+<div class="k"><span>Blue</span><b id="vB">–</b></div>
+<div class="k"><span>Hue (°)</span><b id="vH">–</b></div>
+<div class="k"><span>Saturation</span><b id="vS">–</b></div>
+<div class="k"><span>Phosphate</span><b id="vP" style="font-size:15px">–</b></div>
+<div class="k"><span>Brightness</span><b id="vL">–</b></div>
+<div class="k"><span>Absorbance R</span><b id="vAR">–</b></div>
+<div class="k"><span>Absorbance G</span><b id="vAG">–</b></div>
+<div class="k"><span>Absorbance B</span><b id="vAB">–</b></div>
+</div>
+<p class="msg" id="sat"></p>
+<div class="row">
+<button id="blank">Record blank</button>
+<span class="msg" id="blankInfo" style="margin:0">No blank yet. Absorbance needs one.</span>
+</div>
+</section>
+
+<section>
+<h2>Signal over time</h2>
+<div class="row" style="margin:0 0 10px"><label for="sig">Signal</label>
+<select id="sig">
+<option value="A_R">Absorbance, red (molybdenum blue)</option><option value="A_G">Absorbance, green</option><option value="A_B">Absorbance, blue</option>
+<option value="Hue">Hue</option><option value="Sat">Saturation</option><option value="Lum">Brightness</option>
+<option value="R">Red</option><option value="G">Green</option><option value="B">Blue</option></select></div>
+<canvas id="chart" height="150" style="background:transparent;border:1px solid var(--bd)"></canvas>
+<div class="grid" style="margin-top:10px">
+<div class="k"><span>Mean (last 30)</span><b id="sMean">–</b></div>
+<div class="k"><span>Std. deviation</span><b id="sSD">–</b></div>
+<div class="k"><span>CV</span><b id="sCV">–</b></div>
+</div>
+</section>
+
+<section>
+<h2>Calibration and concentration</h2>
+<div class="row" style="margin-top:0"><label for="conc">Standard (mg/L as P)</label><input id="conc" type="number" step="any" placeholder="e.g. 5"><button id="addStd">Add standard from current reading</button><button id="addB">Add blank as 0 standard</button><button id="clrStd">Clear standards</button></div>
+<div class="scroll"><table><thead><tr><th>mg/L P</th><th>Signal</th><th></th></tr></thead><tbody id="stds"></tbody></table></div>
+<div class="row"><label><input type="checkbox" id="z0" style="min-height:auto"> Force line through zero</label></div>
+<p class="msg" id="fit">Add at least two standards to fit a line.</p>
+<canvas id="calc" height="170" style="background:transparent;border:1px solid var(--bd);margin-top:8px" aria-label="Calibration curve"></canvas>
+<div class="big" id="unk">–</div>
+<p class="msg" id="unkNote">Estimated concentration of the sample in view.</p>
+</section>
+
+<section>
+<h2>Phosphate flag (molybdenum blue)</h2>
+<p class="sub" style="margin-bottom:10px">Phosphate reacts with molybdate and ascorbic acid to form a blue complex that absorbs red light, so the red channel drops as phosphate rises. Use absorbance (red) as the signal.</p>
+<div id="flag" role="status" aria-live="polite" style="border-radius:8px;padding:12px;border:1px solid var(--bd)"><b id="flagT">Calibrate first</b><div class="big" id="flagV">–</div><div class="msg" id="flagN"></div></div>
+<div class="row"><label for="unit">Show as</label><select id="unit"><option value="P">mg/L as P</option><option value="PO4">mg/L as PO₄</option><option value="pct">% w/v as P</option><option value="fs">% of top standard</option><option value="ww">% w/w as P (per sample mass)</option><option value="mgg">mg/g as P (per sample mass)</option></select></div>
+<div class="row"><label for="sm">Sample mass (g)</label><input id="sm" type="number" step="any"><label for="sv">Final volume (mL)</label><input id="sv" type="number" step="any"><label for="dl">Dilution ×</label><input id="dl" type="number" step="any" value="1"></div>
+<div class="row"><button id="useSat">Use saturation as the signal</button></div>
+<div class="row"><label for="hiT">Flag at or above</label><input id="hiT" type="number" step="any"><label for="loT">Flag below</label><input id="loT" type="number" step="any"></div>
+<div class="row"><label for="det">Detect color by</label><select id="det"><option value="hue">Blue hue</option><option value="abs">Absorbance rise</option></select><label for="h1">Hue</label><input id="h1" type="number" value="180" style="width:80px"><label for="h2">to</label><input id="h2" type="number" value="260" style="width:80px"></div>
+<div class="row"><label><input type="checkbox" id="snd" checked style="min-height:auto"> Beep and vibrate on a flag</label></div>
+</section>
+
+<section>
+<h2>Samples</h2>
+<div class="row" style="margin-top:0"><label for="sname">Sample name</label><input id="sname" type="text" style="width:150px" placeholder="Sample 1"><button class="p" id="cap">Capture reading</button></div>
+<div class="row"><label for="tmin">Color development (min)</label><input id="tmin" type="number" value="10" step="any" style="width:80px"><button id="tgo">Start timer</button><b id="tleft"></b></div>
+<p class="msg">The timer beeps and captures a reading when the color has developed. Use the same time for standards and samples.</p>
+<div class="scroll"><table><thead><tr><th>Sample</th><th>Result</th><th>± SD</th><th>Flag</th><th></th></tr></thead><tbody id="smp"></tbody></table></div>
+<div class="row"><button id="smpCsv">Copy results as CSV</button></div>
+</section>
+
+<section>
+<h2>Data log</h2>
+<div class="row" style="margin-top:0"><button id="rec">Start logging</button><button id="csv">Export CSV</button><button id="clr">Clear log</button><span class="msg" id="logN" style="margin:0">0 rows</span></div>
+<div class="row"><label for="lint">Log every</label><select id="lint"><option value="0">reading</option><option value="1" selected>1 s</option><option value="5">5 s</option><option value="30">30 s</option></select><button id="expS">Export setup</button><button id="impS">Import setup</button></div>
+<textarea id="out" aria-label="CSV and setup text" placeholder="CSV or setup JSON appears here. To import a setup, paste it here first."></textarea>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('view'),ctx=cv.getContext('2d',{willReadFrequently:true});
+const vid=document.createElement('video');vid.playsInline=true;vid.muted=true;
+let src=null,track=null,imgEl=null;
+let roi={x:.5,y:.5,r:.06};
+let blank=null,hist=[],cal=[],logging=false,log=[],lastUI=0,lastS=0,cur=null,t0=performance.now();
+const status=t=>$('status').textContent=t;
+const store=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const load=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
+
+blank=load('blank');cal=load('cal')||[];
+if(blank)$('blankInfo').textContent='Blank saved: R '+blank.R.toFixed(0)+', G '+blank.G.toFixed(0)+', B '+blank.B.toFixed(0);
+
+$('cam').onclick=async()=>{
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){status('This browser blocks camera access here. Open the page directly in Safari or Chrome over https, or use "Use a photo".');return}
+  try{
+    if(stream)stream.getTracks().forEach(t=>t.stop());const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:1280}},audio:false});
+    stream=s;vid.srcObject=s;await vid.play();track=s.getVideoTracks()[0];src=vid;wake();caps();
+    status('Camera on. Tap the image on the LED to place the circle.');$('cam').textContent='Restart camera';
+  }catch(e){status('Camera blocked ('+(e.name||'error')+'). Allow camera access in the browser, or open this page outside the preview. You can also use "Use a photo".')}
+};
+$('lock').onclick=async()=>{
+  if(!track){status('Start the camera first.');return}
+  const c=track.getCapabilities?track.getCapabilities():{},adv={};
+  if(c.exposureMode&&c.exposureMode.includes('manual'))adv.exposureMode='manual';
+  if(c.whiteBalanceMode&&c.whiteBalanceMode.includes('manual'))adv.whiteBalanceMode='manual';
+  if(c.focusMode&&c.focusMode.includes('manual'))adv.focusMode='manual';
+  if(!Object.keys(adv).length){status('This phone does not allow manual exposure. Keep lighting and distance fixed, ideally inside a dark enclosure.');return}
+  try{await track.applyConstraints({advanced:[adv]});status('Exposure, white balance and focus locked where supported.')}catch(e){status('Could not lock settings on this device.')}
+};
+$('file').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const im=new Image();im.onload=()=>{imgEl=im;src=im;status('Photo loaded. Tap the LED to sample it.')};im.src=URL.createObjectURL(f);
+};
+$('rad').oninput=e=>roi.r=e.target.value/100;
+let down=false;
+const place=e=>{const r=cv.getBoundingClientRect(),T=placing==='ref'?ref:roi;T.x=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));T.y=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))};
+cv.addEventListener('pointerdown',e=>{down=true;place(e);if(placing==='ref'){placing='roi';down=false;ref.on=true;$('refOn').checked=true;hist=[];$('refB').textContent='Place reference spot';status('Reference placed. Re-record the blank.')}});
+cv.addEventListener('pointermove',e=>{if(down)place(e)});
+addEventListener('pointerup',()=>down=false);
+
+function hsv(R,G,B){const r=R/255,g=G/255,b=B/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let h=0;
+  if(d){h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h*=60;if(h<0)h+=360}
+  return{h,s:mx?d/mx:0,v:mx}}
+function sigs(R,G,B){
+  const p=hsv(R,G,B),o={R,G,B,Hue:p.h,Sat:p.s*100,Lum:.2126*R+.7152*G+.0722*B,A_R:NaN,A_G:NaN,A_B:NaN};
+  if(blank){o.A_R=-Math.log10(Math.max(R,1)/Math.max(blank.R,1));o.A_G=-Math.log10(Math.max(G,1)/Math.max(blank.G,1));o.A_B=-Math.log10(Math.max(B,1)/Math.max(blank.B,1))}
+  return o}
+const avg=(a,k)=>a.reduce((s,x)=>s+x[k],0)/a.length;
+const mean=a=>a.reduce((s,x)=>s+x,0)/a.length;
+const sd=a=>{if(a.length<2)return 0;const m=mean(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1))};
+const fmt=(v,d=2)=>Number.isFinite(v)?v.toFixed(d):'–';
+
+function loop(ts){
+  if(src){
+    const vw=src===vid?vid.videoWidth:src.naturalWidth,vh=src===vid?vid.videoHeight:src.naturalHeight;
+    if(vw){
+      const w=Math.min(640,vw),h=Math.round(vh*w/vw);
+      if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;cv.style.aspectRatio=w+'/'+h}
+      ctx.drawImage(src,0,0,w,h);
+      const rr=Math.max(3,Math.round(roi.r*w)),cx=Math.round(roi.x*w),cy=Math.round(roi.y*h),rx=Math.round(ref.x*w),ry=Math.round(ref.y*h);
+      if(ts-lastS>90){lastS=ts;
+        const a=meas(cx,cy,rr,w,h);
+        if(a){
+          if(ref.on){const q=meas(rx,ry,rr,w,h);if(q&&q.R>5&&q.G>5&&q.B>5){a.R=a.R/q.R*200;a.G=a.G/q.G*200;a.B=a.B/q.B*200}}
+          cur={t:(performance.now()-t0)/1000,...a};hist.push(cur);if(hist.length>600)hist.shift();logTick()}
+      }
+      mark(cx,cy,rr,'#ff4fa3');if(ref.on)mark(rx,ry,rr,'#38bdf8')
+    }
+  }
+  if(ts-lastUI>250){lastUI=ts;ui()}
+  requestAnimationFrame(loop)
+}
+
+function smooth(){const a=hist.slice(-8);if(!a.length)return null;return{R:avg(a,'R'),G:avg(a,'G'),B:avg(a,'B'),sat:avg(a,'sat')}}
+function fit(){
+  const pts=cal.map(c=>({x:c.c,y:c.s})).filter(p=>Number.isFinite(p.y)&&Number.isFinite(p.x)),n=pts.length;
+  if(n<2)return null;
+  const z=$('z0').checked,mx=mean(pts.map(p=>p.x)),my=mean(pts.map(p=>p.y));let m,b;
+  if(z){const sxy=pts.reduce((a,p)=>a+p.x*p.y,0),sxx=pts.reduce((a,p)=>a+p.x*p.x,0);if(!sxx)return null;m=sxy/sxx;b=0}
+  else{let sxx=0,sxy=0;pts.forEach(p=>{sxx+=(p.x-mx)**2;sxy+=(p.x-mx)*(p.y-my)});if(!sxx)return null;m=sxy/sxx;b=my-m*mx}
+  const ssr=pts.reduce((a,p)=>a+(p.y-(m*p.x+b))**2,0),sst=pts.reduce((a,p)=>a+(p.y-my)**2,0),xs=pts.map(p=>p.x);
+  return{m,b,r2:sst?1-ssr/sst:1,n,min:Math.min(...xs),max:Math.max(...xs)}}
+function predict(s){const f=fit();if(!f||!f.m)return NaN;return(s[$('sig').value]-f.b)/f.m}
+
+function ui(){
+  const m=smooth();if(!m)return;
+  const s=sigs(m.R,m.G,m.B);
+  $('sw').style.background='rgb('+[m.R,m.G,m.B].map(Math.round)+')';
+  $('vR').textContent=fmt(s.R,0);$('vG').textContent=fmt(s.G,0);$('vB').textContent=fmt(s.B,0);
+  $('vH').textContent=fmt(s.Hue,0);$('vS').textContent=fmt(s.Sat,0)+'%';$('vL').textContent=fmt(s.Lum,0);
+  $('vAR').textContent=fmt(s.A_R,3);$('vAG').textContent=fmt(s.A_G,3);$('vAB').textContent=fmt(s.A_B,3);
+  const el=$('sat');
+  if(m.sat>.05){el.className='msg warn';el.textContent='The LED is saturating the sensor ('+Math.round(m.sat*100)+'% of the circle). Move back or lower brightness, or readings will flatten.'}
+  else if(s.Lum<20){el.className='msg warn';el.textContent='Very dark. Readings will be noisy; aim at the LED.'}
+  else{el.className='msg';el.textContent=''}
+  const k=$('sig').value,arr=hist.map(h=>sigs(h.R,h.G,h.B)[k]),last=arr.slice(-30).filter(Number.isFinite);
+  if(last.length){const mu=mean(last),sg=sd(last);$('sMean').textContent=fmt(mu,3);$('sSD').textContent=fmt(sg,3);$('sCV').textContent=mu?fmt(Math.abs(sg/mu)*100,1)+'%':'–'}
+  chart(arr);
+  const f=fit();
+  phos(s,f,k);calChart(f);
+  if(f){
+    $('fit').textContent='y = '+fmt(f.m,4)+' x '+(f.b<0?'− ':'+ ')+fmt(Math.abs(f.b),4)+'   R² = '+fmt(f.r2,4)+'   ('+f.n+' standards)'+lodTxt(f,k)+(f.r2<.98?'   Poor fit: recheck standards.':'')+(f.n<5?'   Tip: 5+ standards recommended.':'');
+    const c=(s[k]-f.b)/f.m;
+    $('unk').textContent=Number.isFinite(c)?fmt(c,3):'–';
+    {const u=U[$('unit').value],d=u.f(c,f);$('vP').textContent=Number.isFinite(d)?fmt(d,u.d)+' '+u.l:'–'}
+    $('unkNote').textContent=Number.isFinite(c)&&(c<f.min||c>f.max)?'Outside the standards ('+f.min+' to '+f.max+'). Treat as an extrapolation.':'Estimated concentration of the sample in view.';
+    $('unkNote').className=Number.isFinite(c)&&(c<f.min||c>f.max)?'msg warn':'msg';
+  }else{$('fit').textContent=k.startsWith('A_')&&!blank?'Absorbance needs a blank. Record one first.':'Add at least two standards to fit a line.';$('unk').textContent='–';$('vP').textContent='–'}
+}
+
+function chart(arr){
+  const c=$('chart'),dpr=devicePixelRatio||1,W=c.clientWidth,H=150;
+  const cw=Math.round(W*dpr);if(c.width!==cw){c.width=cw;c.height=H*dpr}
+  const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+  const v=arr.slice(-240).filter(Number.isFinite);if(v.length<2){return}
+  let lo=Math.min(...v),hi=Math.max(...v);if(hi-lo<1e-6){lo-=.5;hi+=.5}const pad=(hi-lo)*.1;lo-=pad;hi+=pad;
+  const cs=getComputedStyle(document.documentElement);
+  g.strokeStyle=cs.getPropertyValue('--bd');g.fillStyle=cs.getPropertyValue('--mu');g.font='11px sans-serif';g.lineWidth=1;
+  for(let i=0;i<=3;i++){const y=8+(H-16)*i/3;g.beginPath();g.moveTo(40,y);g.lineTo(W,y);g.stroke();g.fillText((hi-(hi-lo)*i/3).toFixed(2),2,y+4)}
+  g.strokeStyle=cs.getPropertyValue('--ac').trim();g.lineWidth=2;g.beginPath();
+  v.forEach((y,i)=>{const px=40+(W-44)*i/(v.length-1),py=8+(H-16)*(1-(y-lo)/(hi-lo));i?g.lineTo(px,py):g.moveTo(px,py)});g.stroke()
+}
+
+$('sig').onchange=()=>{cal.forEach(c=>c.s=NaN);redrawStds();ui()};
+$('blank').onclick=()=>{
+  const a=hist.slice(-20);if(a.length<5){status('Start the camera or load a photo first.');return}
+  blank={R:avg(a,'R'),G:avg(a,'G'),B:avg(a,'B')};blank.sd={};['R','G','B'].forEach(c=>blank.sd['A_'+c]=sd(a.map(h=>-Math.log10(Math.max(h[c],1)/Math.max(blank[c],1)))));store('blank',blank);
+  $('blankInfo').textContent='Blank saved: R '+blank.R.toFixed(0)+', G '+blank.G.toFixed(0)+', B '+blank.B.toFixed(0);
+  recalcStds()
+};
+function curSig(){const m=smooth();return m?sigs(m.R,m.G,m.B):null}
+$('addStd').onclick=()=>{
+  const c=parseFloat($('conc').value);if(!Number.isFinite(c)){status('Enter the standard\u2019s concentration first.');return}
+  const m=smooth();if(!m){status('No reading yet.');return}
+  const raw=sigs(m.R,m.G,m.B);
+  cal.push({c,raw:{R:m.R,G:m.G,B:m.B},s:raw[$('sig').value]});recalcStds();$('conc').value=''
+};
+function recalcStds(){cal.forEach(c=>c.s=sigs(c.raw.R,c.raw.G,c.raw.B)[$('sig').value]);store('cal',cal);redrawStds()}
+function redrawStds(){
+  cal.forEach(c=>{if(!Number.isFinite(c.s)&&c.raw)c.s=sigs(c.raw.R,c.raw.G,c.raw.B)[$('sig').value]});
+  $('stds').innerHTML=cal.map((c,i)=>'<tr><td>'+c.c+'</td><td>'+fmt(c.s,4)+'</td><td><button data-i="'+i+'" aria-label="Remove standard">Remove</button></td></tr>').join('')||'<tr><td colspan="3" style="color:var(--mu)">No standards yet.</td></tr>';
+  document.querySelectorAll('#stds button').forEach(b=>b.onclick=()=>{cal.splice(+b.dataset.i,1);store('cal',cal);redrawStds()})
+}
+$('rec').onclick=()=>{logging=!logging;$('rec').textContent=logging?'Stop logging':'Start logging'};
+$('clr').onclick=()=>{log=[];$('logN').textContent='0 rows';$('out').value=''};
+$('csv').onclick=async()=>{
+  if(!log.length){status('Log is empty. Start logging first.');return}
+  const h=['t_s','R','G','B','Hue','Sat_pct','Brightness','A_R','A_G','A_B','conc_mgL_P','flag'];
+  const t=[h.join(',')].concat(log.map(r=>[r.t,r.R,r.G,r.B,r.Hue,r.Sat,r.Lum,r.A_R,r.A_G,r.A_B,r.conc,r.flag].map(v=>typeof v==='string'?v:Number.isFinite(v)?(+v).toFixed(4):'').join(','))).join('\n');
+  $('out').value=t;$('out').select();
+  try{await navigator.clipboard.writeText(t);status('CSV copied to clipboard.')}catch(e){status('CSV is in the box below. Copy it into a spreadsheet.')}
+};
+let fl={since:0,last:'',res:''};
+const U={P:{l:'mg/L as P',f:c=>c,d:3},PO4:{l:'mg/L as PO\u2084',f:c=>c*3.066,d:3},pct:{l:'% w/v as P',f:c=>c/1e4,d:5},fs:{l:'% of top standard',f:(c,f)=>c/f.max*100,d:1},ww:{l:'% w/w as P',f:c=>pm(c,1e4),d:4},mgg:{l:'mg/g as P',f:c=>pm(c,1e3),d:3}};
+function pm(c,k){const m=+$('sm').value,v=+$('sv').value;return m>0&&v>0?c*v*(+$('dl').value||1)/(m*k):NaN}
+function hueOK(s){const a=+$('h1').value,b=+$('h2').value;return s.Sat>=6&&(a<=b?s.Hue>=a&&s.Hue<=b:s.Hue>=a||s.Hue<=b)}
+function lodTxt(f,k){return blank&&blank.sd&&blank.sd[k]?'   LOD \u2248 '+fmt(3.3*blank.sd[k]/Math.abs(f.m),3)+' mg/L P':''}
+function beep(hi){if(!$('snd').checked)return;try{const a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.frequency.value=hi?880:440;g.gain.value=.15;o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+.25)}catch(e){}try{navigator.vibrate&&navigator.vibrate(hi?[200,100,200]:100)}catch(e){}}
+function phos(s,f,k){
+  const T=$('flagT'),V=$('flagV'),N=$('flagN'),box=$('flag');
+  const paint=(t,v,n,c)=>{T.textContent=t;V.textContent=v;N.textContent=n;box.style.background=c?'color-mix(in srgb,'+c+' 16%,transparent)':'';box.style.borderColor=c||'var(--bd)'};
+  fl.res='';
+  if(!f||!f.m){fl.last='';paint('Calibrate first','–','Record a blank, then add at least two phosphate standards.');return}
+  const hue=$('det').value==='hue',det=hue?hueOK(s):s.A_R>0.01;
+  if(!det){fl.last='';fl.since=0;paint(hue?'Waiting for the blue color':'Waiting for absorbance to rise','–','Place the reacted sample in front of the LED.');return}
+  const vals=hist.slice(-15).map(h=>sigs(h.R,h.G,h.B)[k]).filter(Number.isFinite);
+  if(vals.length<15||sd(vals)>(k.startsWith('A_')?0.004:2)){fl.since=0;paint('Blue detected, settling','–','Hold still. A result locks after 2 seconds of steady readings.','var(--mu)');return}
+  if(!fl.since)fl.since=performance.now();
+  if(performance.now()-fl.since<2000){paint('Blue detected, settling','–','Steady, confirming…','var(--mu)');return}
+  const c=(mean(vals)-f.b)/f.m,u=U[$('unit').value],d=u.f(c,f),hi=parseFloat($('hiT').value),lo=parseFloat($('loT').value);
+  const lod=blank&&blank.sd&&blank.sd[k]?3.3*blank.sd[k]/Math.abs(f.m):NaN;
+  if(!Number.isFinite(d)){paint('Enter sample mass and volume','–','Needed to convert mg/L into an amount per sample mass.','var(--mu)');return}
+  let st='OK',col='var(--ok)',t='Within range';
+  if(Number.isFinite(lod)&&c<lod){st='BDL';t='Below detection limit';col='var(--mu)'}
+  else if(Number.isFinite(hi)&&d>=hi){st='HIGH';t='Phosphate flagged: at or above limit';col='var(--ac)'}
+  else if(Number.isFinite(lo)&&d<lo){st='LOW';t='Phosphate flagged: below limit';col='var(--ac)'}
+  fl.res=st;
+  paint(t,fmt(d,u.d)+' '+u.l,(c<f.min||c>f.max?'Outside your standards ('+f.min+' to '+f.max+' mg/L P). Treat as an estimate. ':'')+'Mean of 15 steady readings.',col);
+  if(fl.last!==st){fl.last=st;if(st==='HIGH'||st==='LOW')beep(st==='HIGH')}
+}
+const SET=['unit','hiT','loT','det','h1','h2','sm','sv','dl'],sv=load('ph')||{};
+SET.forEach(id=>{if(sv[id]!==undefined)$(id).value=sv[id];$(id).onchange=()=>{const o={};SET.forEach(i=>o[i]=$(i).value);store('ph',o)}});
+$('useSat').onclick=()=>{$('sig').value='Sat';$('sig').onchange();status('Signal set to saturation. Record a blank and add standards with this signal.')};
+let stream=null,facing='environment',placing='roi',ref={on:false,x:.2,y:.5},lastLog=-1e9,torchOn=false,tint=null,samples=load('smp')||[];
+function meas(cx,cy,rr,w,h){
+  const x0=Math.max(0,cx-rr),y0=Math.max(0,cy-rr),x1=Math.min(w,cx+rr),y1=Math.min(h,cy+rr);
+  if(x1<=x0||y1<=y0)return null;
+  const d=ctx.getImageData(x0,y0,x1-x0,y1-y0).data,W=x1-x0;let R=0,G=0,B=0,n=0,sat=0;
+  for(let y=0;y<y1-y0;y++)for(let x=0;x<W;x++){const dx=x+x0-cx,dy=y+y0-cy;if(dx*dx+dy*dy>rr*rr)continue;const i=(y*W+x)*4;R+=d[i];G+=d[i+1];B+=d[i+2];n++;if(d[i]>=250||d[i+1]>=250||d[i+2]>=250)sat++}
+  return n?{R:R/n,G:G/n,B:B/n,sat:sat/n}:null}
+function mark(cx,cy,rr,col){ctx.lineWidth=2;ctx.strokeStyle='#fff';ctx.beginPath();ctx.arc(cx,cy,rr+2,0,7);ctx.stroke();ctx.strokeStyle=col;ctx.beginPath();ctx.arc(cx,cy,rr,0,7);ctx.stroke()}
+function logTick(){if(!logging||!cur||cur.t-lastLog<+$('lint').value)return;lastLog=cur.t;const s=sigs(cur.R,cur.G,cur.B);log.push({t:cur.t,...s,conc:predict(s),flag:fl.res||''});if(log.length>20000)log.shift();$('logN').textContent=log.length+' rows'}
+$('stop').onclick=()=>{if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;track=null;src=null;$('torch').hidden=true;status('Camera stopped.')}};
+$('flip').onclick=()=>{facing=facing==='environment'?'user':'environment';$('cam').onclick()};
+function caps(){const c=track&&track.getCapabilities?track.getCapabilities():{};$('torch').hidden=!c.torch}
+$('torch').onclick=async()=>{torchOn=!torchOn;try{await track.applyConstraints({advanced:[{torch:torchOn}]})}catch(e){status('Torch not available on this camera.')}};
+async function wake(){try{if(navigator.wakeLock)await navigator.wakeLock.request('screen')}catch(e){}}
+$('refB').onclick=()=>{placing=placing==='ref'?'roi':'ref';$('refB').textContent=placing==='ref'?'Now tap the reference spot':'Place reference spot'};
+$('refOn').onchange=e=>{ref.on=e.target.checked;hist=[];status('Re-record the blank after changing normalization.')};
+$('addB').onclick=()=>{if(!blank){status('Record a blank first.');return}cal.push({c:0,raw:{R:blank.R,G:blank.G,B:blank.B},s:NaN});recalcStds()};
+$('clrStd').onclick=()=>{cal=[];store('cal',cal);redrawStds()};
+function calChart(f){
+  const c=$('calc'),dpr=devicePixelRatio||1,W=c.clientWidth,H=170,cw=Math.round(W*dpr);
+  if(c.width!==cw){c.width=cw;c.height=H*dpr}
+  const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+  const pts=cal.filter(p=>Number.isFinite(p.s));if(!pts.length)return;
+  const xs=pts.map(p=>p.c),ys=pts.map(p=>p.s);let x0=Math.min(...xs,0),x1=Math.max(...xs)||1,y0=Math.min(...ys),y1=Math.max(...ys);
+  if(f){y0=Math.min(y0,f.m*x0+f.b);y1=Math.max(y1,f.m*x1+f.b)}if(y1-y0<1e-6){y0-=.5;y1+=.5}
+  const cs=getComputedStyle(document.documentElement),ac=cs.getPropertyValue('--ac').trim(),px=x=>40+(W-52)*(x-x0)/(x1-x0||1),py=y=>H-22-(H-34)*(y-y0)/(y1-y0);
+  g.strokeStyle=cs.getPropertyValue('--bd');g.fillStyle=cs.getPropertyValue('--mu');g.font='11px sans-serif';g.lineWidth=1;g.strokeRect(40,12,W-52,H-34);
+  g.fillText(y1.toFixed(2),2,18);g.fillText(y0.toFixed(2),2,H-22);g.fillText(x0+'',40,H-6);g.fillText(x1.toFixed(2)+' mg/L P',W-100,H-6);
+  if(f){g.strokeStyle=ac;g.lineWidth=2;g.beginPath();g.moveTo(px(x0),py(f.m*x0+f.b));g.lineTo(px(x1),py(f.m*x1+f.b));g.stroke()}
+  g.fillStyle=ac;pts.forEach(p=>{g.beginPath();g.arc(px(p.c),py(p.s),4,0,7);g.fill()});
+  const m=smooth();if(m&&f){const v=sigs(m.R,m.G,m.B)[$('sig').value];if(Number.isFinite(v)&&v>=y0&&v<=y1){g.strokeStyle=cs.getPropertyValue('--tx');g.setLineDash([4,3]);g.beginPath();g.moveTo(40,py(v));g.lineTo(W-12,py(v));g.stroke();g.setLineDash([])}}
+}
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function capture(){
+  const f=fit(),k=$('sig').value;if(!f){status('Calibrate first: record a blank and add standards.');return}
+  const a=hist.slice(-30);if(a.length<10){status('No reading yet.');return}
+  const cs=a.map(h=>(sigs(h.R,h.G,h.B)[k]-f.b)/f.m).filter(Number.isFinite);if(!cs.length)return;
+  const c=mean(cs),u=U[$('unit').value],d=u.f(c,f),dsd=Math.abs(u.f(sd(cs),f)),hi=parseFloat($('hiT').value),lo=parseFloat($('loT').value);
+  let fg='';if(Number.isFinite(d)){fg='OK';if(Number.isFinite(hi)&&d>=hi)fg='HIGH';else if(Number.isFinite(lo)&&d<lo)fg='LOW'}
+  samples.push({n:$('sname').value.trim()||('Sample '+(samples.length+1)),v:d,sd:dsd,u:u.l,dd:u.d,fg});
+  store('smp',samples);drawSmp();$('sname').value='';if(fg==='HIGH'||fg==='LOW')beep(fg==='HIGH')}
+function drawSmp(){
+  $('smp').innerHTML=samples.map((x,i)=>'<tr><td>'+esc(x.n)+'</td><td>'+fmt(x.v,x.dd)+' '+esc(x.u)+'</td><td>'+fmt(x.sd,x.dd)+'</td><td>'+(x.fg||'–')+'</td><td><button data-i="'+i+'" aria-label="Remove sample">Remove</button></td></tr>').join('')||'<tr><td colspan="5" style="color:var(--mu)">No samples yet.</td></tr>';
+  document.querySelectorAll('#smp button').forEach(b=>b.onclick=()=>{samples.splice(+b.dataset.i,1);store('smp',samples);drawSmp()})}
+$('cap').onclick=capture;
+$('tgo').onclick=()=>{
+  if(tint){clearInterval(tint);tint=null;$('tleft').textContent='';$('tgo').textContent='Start timer';return}
+  const end=Date.now()+(+$('tmin').value||10)*60000;$('tgo').textContent='Cancel timer';
+  tint=setInterval(()=>{const l=end-Date.now();if(l<=0){clearInterval(tint);tint=null;$('tgo').textContent='Start timer';$('tleft').textContent='Captured';beep(false);capture();return}$('tleft').textContent=Math.floor(l/60000)+':'+String(Math.floor(l/1000)%60).padStart(2,'0')},500)};
+$('smpCsv').onclick=async()=>{
+  const t=['sample,value,sd,unit,flag'].concat(samples.map(x=>[JSON.stringify(x.n),fmt(x.v,x.dd),fmt(x.sd,x.dd),JSON.stringify(x.u),x.fg].join(','))).join('\n');
+  $('out').value=t;$('out').select();try{await navigator.clipboard.writeText(t);status('Sample results copied.')}catch(e){status('Sample CSV is in the box under Data log.')}};
+$('expS').onclick=()=>{$('out').value=JSON.stringify({blank,cal,ph:load('ph')||{},sig:$('sig').value});$('out').select();try{navigator.clipboard.writeText($('out').value)}catch(e){}status('Setup JSON is in the box. Paste it on another phone and tap Import setup.')};
+$('impS').onclick=()=>{
+  try{const o=JSON.parse($('out').value);
+    if(o.blank&&Number.isFinite(+o.blank.R)&&Number.isFinite(+o.blank.G)&&Number.isFinite(+o.blank.B)){blank={R:+o.blank.R,G:+o.blank.G,B:+o.blank.B,sd:o.blank.sd&&typeof o.blank.sd==='object'?o.blank.sd:undefined};store('blank',blank);$('blankInfo').textContent='Blank loaded from setup.'}
+    if(Array.isArray(o.cal)){cal=o.cal.filter(x=>x&&Number.isFinite(+x.c)&&x.raw&&Number.isFinite(+x.raw.R)&&Number.isFinite(+x.raw.G)&&Number.isFinite(+x.raw.B)).map(x=>({c:+x.c,raw:{R:+x.raw.R,G:+x.raw.G,B:+x.raw.B},s:NaN}));store('cal',cal)}
+    if(o.ph&&typeof o.ph==='object'){store('ph',o.ph);SET.forEach(i=>{if(o.ph[i]!==undefined)$(i).value=o.ph[i]})}
+    if(typeof o.sig==='string'&&[...$('sig').options].some(op=>op.value===o.sig))$('sig').value=o.sig;
+    recalcStds();status('Setup imported.')}catch(e){status('Could not read that setup. Paste the exported JSON into the box first.')}};
+drawSmp();
+redrawStds();requestAnimationFrame(loop);
+</script></body></html>

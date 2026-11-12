@@ -1,0 +1,1780 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>PHAST — Phosphate Detection and Monitoring System</title>
+  <meta name="description" content="Scientific laboratory phosphate colorimeter platform with spectrophotometric calibration, molybdenum blue analysis, and environmental monitoring telemetry.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090a10;
+      --card: rgba(15, 18, 29, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --tx: #f1f5f9;
+      --mu: #94a3b8;
+      --ac-purple: #8b5cf6;
+      --ac-violet: #a855f7;
+      --ac-red: #f43f5e;
+      --ac-rose: #ef4444;
+      --ac-cyan: #06b6d4;
+      --ac-emerald: #10b981;
+      --ac-amber: #f59e0b;
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--tx);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+      background-image: radial-gradient(rgba(168, 85, 247, 0.07) 1px, transparent 1px),
+                        radial-gradient(rgba(244, 63, 94, 0.04) 1px, transparent 1px);
+      background-size: 30px 30px;
+      background-position: 0 0, 15px 15px;
+    }
+    .font-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(9, 10, 16, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 12px 20px;
+    }
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(139,92,246,0.7), rgba(244,63,94,0.5));
+      border: 1px solid rgba(168,85,247,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 16px rgba(139,92,246,0.3);
+    }
+    .brand-text h1 {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-text p {
+      font-size: 11px;
+      color: var(--mu);
+    }
+    .nav-tabs {
+      display: flex;
+      background: #121522;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 2px;
+    }
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--mu);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .nav-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .nav-btn.active {
+      background: linear-gradient(135deg, #7c3aed, #9333ea);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(147,51,234,0.4);
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .status-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+    .btn {
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 7px;
+      border: 1px solid var(--card-border);
+      background: #151928;
+      color: var(--tx);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+    .btn:hover { background: #1c2237; border-color: rgba(255,255,255,0.15); }
+    .btn-primary {
+      background: linear-gradient(135deg, #8b5cf6, #ec4899);
+      border-color: rgba(255,255,255,0.2);
+      color: #fff;
+      box-shadow: 0 0 14px rgba(168,85,247,0.3);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 0 20px rgba(168,85,247,0.5);
+    }
+    .btn-danger {
+      background: rgba(244,63,94,0.15);
+      border-color: rgba(244,63,94,0.3);
+      color: #fb7185;
+    }
+    .btn-danger:hover { background: rgba(244,63,94,0.25); }
+
+    main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .glass-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      position: relative;
+    }
+    .card-title {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ac-purple);
+      margin-bottom: 2px;
+    }
+    .card-head {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Main Centerpiece */
+    .centerpiece-grid {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 28px;
+      align-items: center;
+    }
+    @media (max-width: 900px) {
+      .centerpiece-grid { grid-template-columns: 1fr; }
+    }
+    .gauge-wrapper {
+      position: relative;
+      width: 240px;
+      height: 240px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .gauge-svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-135deg);
+    }
+    .gauge-bg {
+      fill: none;
+      stroke: #161a29;
+      stroke-width: 12;
+      stroke-linecap: round;
+    }
+    .gauge-fill {
+      fill: none;
+      stroke: url(#gaugeGrad);
+      stroke-width: 12;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.6s ease;
+      filter: drop-shadow(0 0 10px rgba(168,85,247,0.6));
+    }
+    .gauge-center {
+      position: absolute;
+      text-align: center;
+      pointer-events: none;
+    }
+    .gauge-val {
+      font-family: var(--font-mono);
+      font-size: 44px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+    .gauge-unit {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--mu);
+      margin-top: 4px;
+    }
+    .centerpiece-info {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .banner-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .banner-box {
+      padding: 14px;
+      border-radius: 12px;
+      background: #111422;
+      border: 1px solid var(--card-border);
+    }
+    .banner-box.alert {
+      background: rgba(244,63,94,0.1);
+      border-color: rgba(244,63,94,0.3);
+    }
+    .banner-box.safe {
+      background: rgba(16,185,129,0.1);
+      border-color: rgba(16,185,129,0.3);
+    }
+    .banner-box.mod {
+      background: rgba(168,85,247,0.1);
+      border-color: rgba(168,85,247,0.3);
+    }
+
+    /* Cuvette Graphic */
+    .cuvette-flex {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      align-items: center;
+    }
+    @media (max-width: 800px) {
+      .cuvette-flex { grid-template-columns: 1fr; }
+    }
+    .cuvette-chamber {
+      background: #090b14;
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      position: relative;
+      overflow: hidden;
+      height: 180px;
+    }
+    .cuvette-tube {
+      width: 74px;
+      height: 130px;
+      border: 2px solid rgba(255,255,255,0.25);
+      border-radius: 0 0 12px 12px;
+      background: rgba(255,255,255,0.03);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 4px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.6);
+    }
+    .cuvette-liquid {
+      width: 100%;
+      height: 85%;
+      border-radius: 0 0 8px 8px;
+      transition: all 0.5s;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cuvette-beam-in {
+      width: 70px;
+      height: 22px;
+      background: linear-gradient(to right, #f43f5e, rgba(244,63,94,0.8));
+      border-radius: 4px 0 0 4px;
+      box-shadow: 0 0 12px #f43f5e;
+      display: flex;
+      align-items: center;
+      padding-left: 6px;
+      font-size: 9px;
+      font-family: var(--font-mono);
+      color: #fff;
+    }
+    .cuvette-beam-out {
+      width: 70px;
+      height: 22px;
+      border-radius: 0 4px 4px 0;
+      transition: all 0.5s;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 6px;
+      font-size: 9px;
+      font-family: var(--font-mono);
+      color: #fff;
+    }
+
+    /* Grids & Tables */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .grid-6 { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+    @media (max-width: 900px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+    .tele-cell {
+      background: #111422;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .tele-cell span {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--mu);
+    }
+    .tele-cell b {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      color: #fff;
+      margin: 4px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+    th {
+      background: #111424;
+      color: var(--mu);
+      font-weight: 600;
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    td {
+      padding: 9px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* Canvas Viewport */
+    .canvas-wrap {
+      position: relative;
+      background: #000;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow: hidden;
+      aspect-ratio: 4/3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    canvas { width: 100%; height: 100%; display: block; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+    select, input[type=text], input[type=number] {
+      background: #121522;
+      border: 1px solid var(--card-border);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      outline: none;
+    }
+    select:focus, input:focus { border-color: var(--ac-purple); }
+    textarea {
+      width: 100%;
+      height: 90px;
+      background: #0b0d18;
+      border: 1px solid var(--card-border);
+      color: #94a3b8;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      border-radius: 8px;
+      padding: 10px;
+      outline: none;
+      resize: vertical;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-content {
+      background: #0f1220;
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      max-width: 800px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <div class="brand-text">
+          <h1>PHAST <span style="font-size:10px; color:var(--ac-purple); border:1px solid rgba(168,85,247,0.3); padding:1px 6px; border-radius:4px;">STANDALONE LAB</span></h1>
+          <p>Phosphate Detection & Monitoring System</p>
+        </div>
+      </div>
+
+      <nav class="nav-tabs">
+        <button class="nav-btn active" onclick="switchTab('overview')">Overview</button>
+        <button class="nav-btn" onclick="switchTab('detection')">Detection Workbench</button>
+        <button class="nav-btn" onclick="switchTab('analysis')">Calibration & Analysis</button>
+        <button class="nav-btn" onclick="switchTab('history')">History & Log</button>
+        <button class="nav-btn" onclick="switchTab('about')">About</button>
+      </nav>
+
+      <div class="header-actions">
+        <div class="status-badge">
+          <div class="status-dot"></div>
+          <span id="sysStatusText">STANDALONE READY</span>
+        </div>
+        <button class="btn" id="audioToggle" onclick="toggleAudio()" title="Sound alerts">
+          <span id="audioIcon">🔊 Sound On</span>
+        </button>
+        <button class="btn btn-primary" onclick="togglePresentation()">Presentation Mode</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- TAB 1: OVERVIEW -->
+    <div id="tab-overview">
+      <!-- Main Visual Centerpiece -->
+      <section class="glass-card">
+        <div class="centerpiece-grid">
+          <!-- Circular Radial Progress Gauge -->
+          <div class="gauge-wrapper">
+            <svg class="gauge-svg" viewBox="0 0 200 200">
+              <defs>
+                <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#8b5cf6" />
+                  <stop offset="60%" stop-color="#a855f7" />
+                  <stop offset="100%" stop-color="#f43f5e" />
+                </linearGradient>
+              </defs>
+              <circle class="gauge-bg" cx="100" cy="100" r="80" stroke-dasharray="377 502" />
+              <circle class="gauge-fill" id="gaugeArc" cx="100" cy="100" r="80" stroke-dasharray="377 502" stroke-dashoffset="377" />
+            </svg>
+            <div class="gauge-center">
+              <div class="card-title">CONCENTRATION</div>
+              <div class="gauge-val" id="dispVal">0.000</div>
+              <div class="gauge-unit" id="dispUnit">mg/L as P</div>
+              <div style="font-size:11px; font-family:var(--font-mono); color:#a855f7; margin-top:2px;" id="dispEquiv">PO₄³⁻: 0.000</div>
+            </div>
+          </div>
+
+          <!-- Telemetry & Actions -->
+          <div class="centerpiece-info">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <div>
+                <div class="card-title">MOLYBDENUM BLUE ASSAY CENTERPIECE</div>
+                <h2 style="font-size:22px; font-weight:700; color:#fff;">Spectrophotometric Phosphate Telemetry</h2>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:12px; color:var(--mu); font-family:var(--font-mono);">Unit:</label>
+                <select id="unitSelect" onchange="changeUnit(this.value)">
+                  <option value="P">mg/L as P (Elemental)</option>
+                  <option value="PO4">mg/L as PO₄³⁻ (Phosphate)</option>
+                  <option value="pct">% w/v as P</option>
+                  <option value="fs">% of Top Standard</option>
+                  <option value="ww">% w/w as P (per Mass)</option>
+                  <option value="mgg">mg/g as P (per Mass)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="banner-grid">
+              <div class="banner-box safe" id="classBox">
+                <span class="card-title">CLASSIFICATION</span>
+                <div style="font-size:16px; font-weight:700; font-family:var(--font-mono); color:#34d399; margin:4px 0;" id="classLabel">Low / Oligotrophic</div>
+                <p style="font-size:11px; color:#cbd5e1;" id="classDesc">Acceptable baseline nutrient level for unpolluted freshwater streams (&lt; 0.05 mg/L P).</p>
+              </div>
+
+              <div class="banner-box">
+                <span class="card-title">SIGNAL & STABILITY</span>
+                <div style="font-size:16px; font-weight:700; font-family:var(--font-mono); color:#c084fc; margin:4px 0;" id="stabLabel">Steady Optical Reading</div>
+                <p style="font-size:11px; color:#cbd5e1;" id="stabDesc">Red Absorbance A_R: <strong id="vAR_ov">0.000</strong> · Mean of 15 samples.</p>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-top:1px solid var(--card-border); padding-top:12px;">
+              <div style="font-size:12px; font-family:var(--font-mono); color:var(--mu);">
+                Regression Fit: <strong id="fitEq" style="color:#fff;">y = 0.2100x + 0.0000</strong> · R²: <strong id="fitR2" style="color:#34d399;">0.9984</strong>
+              </div>
+              <button class="btn btn-primary" onclick="captureSample()">Capture Sample Reading</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cuvette & Colorimetric Reaction Visualization -->
+      <section class="glass-card">
+        <div class="card-title">COLORIMETRIC DETECTION VISUALIZATION</div>
+        <div class="card-head">
+          <span>Heteropoly Molybdenum Blue Reaction Chamber</span>
+          <span style="font-size:12px; font-weight:400; color:var(--mu); font-family:var(--font-mono);">Path Length: 10.0 mm</span>
+        </div>
+
+        <div class="cuvette-flex">
+          <div class="cuvette-chamber">
+            <div class="cuvette-beam-in">λ 650 nm</div>
+            <div class="cuvette-tube">
+              <div class="cuvette-liquid" id="cuvetteLiquid" style="background:#f8f5eb;">
+                <span style="font-size:10px; font-weight:700; font-family:var(--font-mono); color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.8); background:rgba(0,0,0,0.3); padding:2px 4px; border-radius:4px;" id="cuvetteLabel">0.00 mg/L</span>
+              </div>
+            </div>
+            <div class="cuvette-beam-out" id="cuvetteBeamOut" style="background:rgba(244,63,94,0.9);">
+              <span id="transmittanceText">T: 98%</span>
+            </div>
+          </div>
+
+          <div>
+            <div style="margin-bottom:12px;">
+              <div style="display:flex; justify-content:space-between; font-size:11px; font-family:var(--font-mono); color:var(--mu); margin-bottom:4px;">
+                <span>Molybdenum Blue Color Gradient</span>
+                <span style="color:#c084fc;">0.00 ⟶ 5.00 mg/L P</span>
+              </div>
+              <div style="width:100%; height:20px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); position:relative; background:linear-gradient(to right, rgb(248, 245, 235), rgb(170, 215, 245), rgb(118, 188, 238), rgb(54, 140, 218), rgb(22, 88, 172));">
+                <div id="gradPin" style="position:absolute; top:-2px; bottom:-2px; width:4px; background:#fff; border-radius:2px; box-shadow:0 0 6px #fff; transform:translateX(-50%); left:0%;"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:10px; font-family:var(--font-mono); color:var(--mu); margin-top:3px;">
+                <span>0.0 mg/L</span>
+                <span>1.0 mg/L</span>
+                <span>2.5 mg/L</span>
+                <span>5.0 mg/L</span>
+              </div>
+            </div>
+
+            <p style="font-size:12px; color:#cbd5e1; line-height:1.6;">
+              Phosphate reacts with ammonium molybdate and antimony potassium tartrate under acidic conditions to produce phosphomolybdic acid. Ascorbic acid reduces this into <strong>Molybdenum Blue</strong>, which absorbs red light (λ ≈ 650–880 nm). Higher phosphate concentration deepens the blue solution, reducing transmitted red intensity according to the Beer-Lambert Law (<em>A = ε·b·c</em>).
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Graphs Overview (Signal Trend & RGB Histogram) -->
+      <div class="grid-2">
+        <section class="glass-card">
+          <div class="card-title">SIGNAL OVER TIME GRAPH</div>
+          <div class="card-head">Phosphate Concentration & Absorbance Trend</div>
+          <canvas id="trendChart" height="170" style="background:#0c0e18; border-radius:10px; border:1px solid var(--card-border);"></canvas>
+          <div class="row" style="justify-content:space-between; font-size:11px; font-family:var(--font-mono); color:var(--mu);">
+            <span>Signal: <strong style="color:#fff;" id="sigLabel">Absorbance Red (A_R)</strong></span>
+            <span>Mean: <strong id="tMean">0.000</strong> · SD: <strong id="tSD">0.000</strong></span>
+          </div>
+        </section>
+
+        <section class="glass-card">
+          <div class="card-title">RGB SPECTRAL HISTOGRAM</div>
+          <div class="card-head">Sampling Target Colorimetric Distribution</div>
+          <canvas id="histoChart" height="170" style="background:#0c0e18; border-radius:10px; border:1px solid var(--card-border);"></canvas>
+          <div class="row" style="justify-content:space-between; font-size:11px; font-family:var(--font-mono); color:var(--mu);">
+            <span style="color:#f43f5e;">Red Channel (Absorption target)</span>
+            <span style="color:#10b981;">Green</span>
+            <span style="color:#38bdf8;">Blue Channel</span>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- TAB 2: DETECTION WORKBENCH -->
+    <div id="tab-detection" class="hidden">
+      <div class="grid-2">
+        <!-- Optical Input Canvas -->
+        <section class="glass-card">
+          <div class="card-title">OPTICAL SAMPLING WORKBENCH</div>
+          <div class="card-head">
+            <span>Camera & Image Sensor Viewport</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:11px; font-family:var(--font-mono); color:var(--mu);">Swatch:</span>
+              <div id="swatchBox" style="width:24px; height:24px; border-radius:6px; border:1px solid rgba(255,255,255,0.2); background:#fff;"></div>
+            </div>
+          </div>
+
+          <div class="canvas-wrap">
+            <canvas id="viewCanvas" aria-label="Camera view. Tap to place sampling circle."></canvas>
+            <video id="webcamVideo" playsinline muted style="display:none;"></video>
+          </div>
+
+          <div class="row">
+            <button class="btn btn-primary" id="camBtn" onclick="toggleCamera()">Start Camera</button>
+            <button class="btn" onclick="lockExposure()">Lock Exposure</button>
+            <button class="btn" onclick="flipCamera()">Flip Sensor</button>
+            <button class="btn" id="torchBtn" onclick="toggleTorch()" style="display:none;">Torch</button>
+            <label class="btn" for="fileInput">Upload Photo</label>
+            <input id="fileInput" type="file" accept="image/*" style="display:none;" onchange="handleFile(this)">
+            <button class="btn btn-primary" onclick="recordBlank()">Record Blank (I₀)</button>
+          </div>
+
+          <div class="row" style="margin-top:14px;">
+            <label style="font-size:11px; font-family:var(--font-mono); color:var(--mu);">Circle Size:</label>
+            <input id="radSlider" type="range" min="1" max="25" value="6" oninput="setRadius(this.value)" style="flex:1;">
+            <span id="radVal" style="font-size:11px; font-family:var(--font-mono); color:#fff; width:30px; text-align:right;">6%</span>
+          </div>
+
+          <div class="row">
+            <button class="btn" id="refBtn" onclick="togglePlaceRef()">Place Reference Spot</button>
+            <label style="font-size:12px; font-family:var(--font-mono); color:var(--mu); cursor:pointer;">
+              <input type="checkbox" id="refOnBox" onchange="toggleRefNorm(this.checked)"> Normalize to Reference
+            </label>
+          </div>
+
+          <!-- Quick Lab Standard Presets Dropdown -->
+          <div style="margin-top:14px; padding:12px; border-radius:10px; background:#111422; border:1px solid rgba(168,85,247,0.2);">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <span style="font-size:11px; font-family:var(--font-mono); color:var(--ac-purple);">Select Simulated Lab Standard / Environmental Sample:</span>
+              <select id="presetSelect" onchange="loadPresetSample(this.value)">
+                <option value="0.0">Standard 0.00 mg/L (Reagent Blank)</option>
+                <option value="0.2">Standard 0.20 mg/L P</option>
+                <option value="0.5">Standard 0.50 mg/L P</option>
+                <option value="1.0">Standard 1.00 mg/L P</option>
+                <option value="2.5">Standard 2.50 mg/L P</option>
+                <option value="5.0">Standard 5.00 mg/L P</option>
+                <option value="lake">Lake Serene (Oligotrophic, 0.04 mg/L)</option>
+                <option value="river">Blackwood River (Mesotrophic, 0.08 mg/L)</option>
+                <option value="farm">Cornfield Tile Runoff (Eutrophic, 1.48 mg/L)</option>
+                <option value="effluent">Municipal Clarifier Outfall (0.35 mg/L)</option>
+              </select>
+            </div>
+          </div>
+
+          <p id="statusMsg" style="font-size:11px; font-family:var(--font-mono); color:var(--mu); margin-top:10px;">Select a preset or start the camera.</p>
+        </section>
+
+        <!-- Live Telemetry Matrix -->
+        <section class="glass-card">
+          <div class="card-title">SPECTRAL TELEMETRY CHANNELS</div>
+          <div class="card-head">Live Sensor Photometric Channels</div>
+
+          <div class="grid-3" style="margin-bottom:14px;">
+            <div class="tele-cell">
+              <span>Red Absorbance (A_R)</span>
+              <b id="vAR" style="color:#f43f5e;">0.000</b>
+              <span>Key indicator for Mo-Blue</span>
+            </div>
+            <div class="tele-cell">
+              <span>Green Absorbance (A_G)</span>
+              <b id="vAG" style="color:#10b981;">0.000</b>
+              <span>Transmittance</span>
+            </div>
+            <div class="tele-cell">
+              <span>Blue Absorbance (A_B)</span>
+              <b id="vAB" style="color:#38bdf8;">0.000</b>
+              <span>Control channel</span>
+            </div>
+          </div>
+
+          <div class="grid-6">
+            <div class="tele-cell">
+              <span>Raw Red</span>
+              <b id="vR">248</b>
+            </div>
+            <div class="tele-cell">
+              <span>Raw Green</span>
+              <b id="vG">245</b>
+            </div>
+            <div class="tele-cell">
+              <span>Raw Blue</span>
+              <b id="vB">235</b>
+            </div>
+            <div class="tele-cell">
+              <span>Hue Angle</span>
+              <b id="vH">45°</b>
+            </div>
+            <div class="tele-cell">
+              <span>Saturation</span>
+              <b id="vS">5%</b>
+            </div>
+            <div class="tele-cell">
+              <span>Luminance</span>
+              <b id="vL">245</b>
+            </div>
+          </div>
+
+          <div style="margin-top:18px; padding:12px; border-radius:10px; background:#111424; border:1px solid var(--card-border);">
+            <div class="card-title">CALIBRATION BLANK STATUS</div>
+            <div id="blankInfo" style="font-size:12px; font-family:var(--font-mono); color:#fff; margin-top:4px;">
+              Blank registered: R 248, G 245, B 235 (I₀ reference saved).
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- TAB 3: CALIBRATION & ANALYSIS -->
+    <div id="tab-analysis" class="hidden">
+      <div class="grid-2">
+        <!-- Calibration Curve Canvas -->
+        <section class="glass-card">
+          <div class="card-title">CALIBRATION CURVE (BEER-LAMBERT)</div>
+          <div class="card-head">Linear Regression: Signal vs Concentration</div>
+          <canvas id="calChart" height="220" style="background:#0c0e18; border-radius:10px; border:1px solid var(--card-border);"></canvas>
+
+          <div class="row" style="justify-content:space-between; font-size:11px; font-family:var(--font-mono); color:var(--mu); margin-top:8px;">
+            <span id="calFitEquation" style="color:#c084fc;">y = 0.2100 x + 0.0000</span>
+            <span id="calR2Val" style="color:#34d399;">R² = 0.9984</span>
+            <span id="calLODVal" style="color:#fff;">LOD ≈ 0.055 mg/L P</span>
+          </div>
+
+          <div class="row" style="margin-top:14px;">
+            <input type="number" id="stdInput" placeholder="Standard mg/L P" step="any" style="width:140px;">
+            <button class="btn btn-primary" onclick="addCurrentStandard()">Add Standard</button>
+            <button class="btn" onclick="addBlankZero()">Add 0.0 Blank</button>
+            <button class="btn btn-danger" onclick="clearStandards()">Clear</button>
+            <label style="font-size:11px; font-family:var(--font-mono); color:var(--mu); margin-left:auto;">
+              <input type="checkbox" id="forceZeroCheck" onchange="toggleZero(this.checked)"> Force Through Zero
+            </label>
+          </div>
+
+          <div style="overflow-x:auto; margin-top:14px; max-height:160px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>mg/L P Standard</th>
+                  <th>Measured Signal (A_R)</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="stdsTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Detection Comparison & Validation -->
+        <section class="glass-card">
+          <div class="card-title">ACCURACY VALIDATION</div>
+          <div class="card-head">Standard vs Measured Comparison</div>
+          <p style="font-size:11px; color:var(--mu); font-family:var(--font-mono); margin-bottom:12px;">
+            Validates optical sensor fidelity by comparing known calibration standard values against detector back-calculations.
+          </p>
+
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Known Standard</th>
+                  <th>Measured A_R</th>
+                  <th>Back-Calc (mg/L)</th>
+                  <th>% Error</th>
+                  <th>Accuracy</th>
+                </tr>
+              </thead>
+              <tbody id="comparisonTableBody"></tbody>
+            </table>
+          </div>
+
+          <div style="margin-top:20px; padding:14px; border-radius:12px; background:#111422; border:1px solid var(--card-border);">
+            <div class="card-title">ENVIRONMENTAL REGULATORY BENCHMARKS</div>
+            <ul style="font-size:11px; font-family:var(--font-mono); color:#cbd5e1; list-style:none; line-height:1.8; margin-top:6px;">
+              <li>• <strong style="color:#34d399;">&lt; 0.05 mg/L P:</strong> EPA Pristine Lake Eutrophication Threshold</li>
+              <li>• <strong style="color:#c084fc;">0.05 – 0.10 mg/L P:</strong> EPA River Ambient Water Quality Standard</li>
+              <li>• <strong style="color:#f59e0b;">0.10 – 0.50 mg/L P:</strong> Eutrophic (Algal Bloom Risk Warning)</li>
+              <li>• <strong style="color:#f43f5e;">&gt; 0.50 mg/L P:</strong> Hypereutrophic / Agricultural Outfall Action Level</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- TAB 4: HISTORY & LOG -->
+    <div id="tab-history" class="hidden">
+      <div class="grid-2">
+        <!-- Sample Capture Station -->
+        <section class="glass-card">
+          <div class="card-title">SAMPLE RECORDS</div>
+          <div class="card-head">Capture & Color Development Timer</div>
+
+          <div class="row">
+            <input type="text" id="snameInput" placeholder="Sample Label (e.g. River Inflow)" style="flex:1;">
+            <button class="btn btn-primary" onclick="captureNamedSample()">Capture Now</button>
+          </div>
+
+          <div class="row" style="margin-top:14px; padding:12px; border-radius:10px; background:#111422;">
+            <span style="font-size:11px; font-family:var(--font-mono); color:var(--mu);">Incubation Timer (10 min):</span>
+            <input type="number" id="tminInput" value="10" step="any" style="width:60px;">
+            <button class="btn" id="timerBtn" onclick="toggleTimer()">Start Timer</button>
+            <b id="timerDisplay" style="font-family:var(--font-mono); color:#f43f5e; margin-left:auto;"></b>
+          </div>
+
+          <div style="overflow-x:auto; margin-top:14px; max-height:240px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Sample</th>
+                  <th>Concentration</th>
+                  <th>± SD</th>
+                  <th>Flag</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="samplesTableBody"></tbody>
+            </table>
+          </div>
+
+          <div class="row" style="margin-top:12px;">
+            <button class="btn" onclick="copySamplesCsv()">Copy Samples as CSV</button>
+            <button class="btn btn-danger" onclick="clearSamples()">Clear Samples</button>
+          </div>
+        </section>
+
+        <!-- Continuous Telemetry Data Logger -->
+        <section class="glass-card">
+          <div class="card-title">DATA LOGGER & BACKUP</div>
+          <div class="card-head">
+            <span>Continuous Telemetry Log</span>
+            <span id="logCount" style="font-size:12px; font-family:var(--font-mono); color:var(--mu);">0 rows</span>
+          </div>
+
+          <div class="row">
+            <button class="btn btn-primary" id="logBtn" onclick="toggleLogging()">Start Logging</button>
+            <button class="btn" onclick="exportLogCsv()">Export CSV</button>
+            <button class="btn btn-danger" onclick="clearLog()">Clear Log</button>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <label style="font-size:11px; font-family:var(--font-mono); color:var(--mu);">Interval:</label>
+            <select id="logInterval">
+              <option value="1">1 second</option>
+              <option value="5">5 seconds</option>
+              <option value="30">30 seconds</option>
+            </select>
+            <button class="btn" onclick="exportSetupJson()" style="margin-left:auto;">Export Setup JSON</button>
+            <button class="btn" onclick="importSetupJson()">Import Setup</button>
+          </div>
+
+          <textarea id="dataBox" placeholder="Exported CSV data, calibration standards, or instrument backup JSON will appear here..." style="margin-top:12px;"></textarea>
+        </section>
+      </div>
+    </div>
+
+    <!-- TAB 5: ABOUT -->
+    <div id="tab-about" class="hidden">
+      <section class="glass-card">
+        <div class="card-title">SCIENTIFIC MANUAL & SPECTROPHOTOMETRY PRINCIPLES</div>
+        <div class="card-head">PHAST Instrument Architecture</div>
+
+        <div class="grid-2" style="font-size:13px; line-height:1.7; color:#cbd5e1;">
+          <div>
+            <h3 style="color:#c084fc; font-family:var(--font-mono); margin-bottom:6px;">1. Chemical Reaction Mechanism</h3>
+            <p>
+              Orthophosphate reacts with acidified ammonium heptamolybdate and antimony potassium tartrate to form 12-molybdophosphoric acid:
+            </p>
+            <pre style="background:#0b0d18; padding:10px; border-radius:8px; font-family:var(--font-mono); font-size:11px; color:#c084fc; margin:8px 0; overflow-x:auto;">H₃PO₄ + 12(NH₄)₂MoO₄ + 21H⁺ ⟶ (NH₄)₃[PMo₁₂O₄₀] + 21NH₄⁺ + 12H₂O</pre>
+            <p>
+              Ascorbic acid reduces this heteropoly acid to produce <strong>molybdenum blue</strong> (mixed-valence heteropoly complex), which strongly absorbs red light in the 650–880 nm spectrum.
+            </p>
+          </div>
+
+          <div>
+            <h3 style="color:#f43f5e; font-family:var(--font-mono); margin-bottom:6px;">2. Beer-Lambert Colorimetry</h3>
+            <p>
+              Under monochromatic or bandpass red illumination, transmitted light decreases logarithmically with concentration:
+            </p>
+            <pre style="background:#0b0d18; padding:10px; border-radius:8px; font-family:var(--font-mono); font-size:11px; color:#f43f5e; margin:8px 0; overflow-x:auto;">A_R = -log₁₀(I / I₀) = ε · b · c</pre>
+            <p>
+              By dividing measured intensity <em>I</em> by blank reference <em>I₀</em>, ambient drift is eliminated and concentration is computed from the calibration slope: <em>c = (A_R - b) / m</em>.
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Presentation Mode Overlay Modal -->
+  <div class="modal-overlay" id="presModal">
+    <div class="modal-content" style="max-width:1100px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--card-border); pb:14px; margin-bottom:20px;">
+        <div>
+          <span class="card-title">PHAST RESEARCH PRESENTATION MODE</span>
+          <h2 style="font-size:24px; font-weight:800; color:#fff;">Phosphate Spectrophotometric Telemetry</h2>
+        </div>
+        <button class="btn btn-primary" onclick="togglePresentation()">Exit Presentation Mode</button>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:center;">
+        <div style="text-align:center; padding:30px; border-radius:16px; background:#0b0e1b; border:1px solid rgba(168,85,247,0.3);">
+          <div class="card-title">CURRENT PHOSPHATE CONCENTRATION</div>
+          <div style="font-family:var(--font-mono); font-size:64px; font-weight:800; color:#c084fc; margin:10px 0;" id="presVal">0.000</div>
+          <div style="font-size:16px; font-family:var(--font-mono); color:var(--mu);" id="presUnit">mg/L as P</div>
+          <div style="margin-top:14px; font-size:14px; font-weight:700; font-family:var(--font-mono);" id="presClass">Low / Oligotrophic</div>
+        </div>
+
+        <div>
+          <div style="padding:20px; border-radius:14px; background:#0b0e1b; border:1px solid var(--card-border); margin-bottom:16px;">
+            <div class="card-title">CALIBRATION FIDELITY</div>
+            <div style="font-size:14px; font-family:var(--font-mono); color:#fff; line-height:1.8; margin-top:6px;">
+              Regression Equation: <strong id="presEq" style="color:#c084fc;">y = 0.2100x + 0.0000</strong><br>
+              Goodness of Fit R²: <strong id="presR2" style="color:#34d399;">0.9984</strong><br>
+              Mean Validation Accuracy: <strong id="presAcc" style="color:#34d399;">98.4%</strong>
+            </div>
+          </div>
+
+          <div style="padding:20px; border-radius:14px; background:#0b0e1b; border:1px solid var(--card-border);">
+            <div class="card-title">OPTICAL MEASUREMENT PRINCIPLE</div>
+            <p style="font-size:12px; color:#cbd5e1; line-height:1.6; margin-top:6px;">
+              Absorbance measured at peak molybdenum blue absorption band. Linear dynamic range spans 0.05 to 5.0 mg/L P with limit of detection LOD ≈ 0.05 mg/L.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vanilla JS Engine (Offline Ready, No Server Needed) -->
+  <script>
+    // State
+    let activeTab = 'overview';
+    let soundEnabled = true;
+    let isPres = false;
+    let stream = null;
+    let track = null;
+    let facing = 'environment';
+    let torchOn = false;
+    let placingRef = false;
+    let isPointerDown = false;
+    let roi = { x: 0.5, y: 0.5, r: 0.06 };
+    let refSpot = { x: 0.25, y: 0.5, on: false };
+
+    // Telemetry History
+    let blank = { R: 248, G: 245, B: 235, sd: { A_R: 0.0035 } };
+    let currentRaw = { R: 248, G: 245, B: 235, sat: 0 };
+    let historyVals = [];
+    let standards = [
+      { c: 0.0, s: 0.000, raw: { R: 248, G: 245, B: 235 } },
+      { c: 0.5, s: 0.162, raw: { R: 170, G: 215, B: 245 } },
+      { c: 1.0, s: 0.322, raw: { R: 118, G: 188, B: 238 } },
+      { c: 2.5, s: 0.662, raw: { R: 54, G: 140, B: 218 } },
+      { c: 5.0, s: 1.050, raw: { R: 22, G: 88, B: 172 } }
+    ];
+    let samples = [];
+    let logData = [];
+    let isLogging = false;
+    let timerId = null;
+    let unit = 'P';
+    let forceZero = false;
+
+    // Canvas references
+    const cv = document.getElementById('viewCanvas');
+    const ctx = cv.getContext('2d', { willReadFrequently: true });
+    const vid = document.getElementById('webcamVideo');
+
+    // Tab switcher
+    function switchTab(t) {
+      activeTab = t;
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      const found = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('onclick').includes(t));
+      if (found) found.classList.add('active');
+
+      ['overview', 'detection', 'analysis', 'history', 'about'].forEach(id => {
+        document.getElementById('tab-' + id).classList.toggle('hidden', id !== t);
+      });
+      if (t === 'overview' || t === 'analysis') {
+        drawCharts();
+      }
+    }
+
+    function togglePresentation() {
+      isPres = !isPres;
+      document.getElementById('presModal').style.display = isPres ? 'flex' : 'none';
+      if (isPres) updatePresentation();
+    }
+
+    function toggleAudio() {
+      soundEnabled = !soundEnabled;
+      document.getElementById('audioIcon').textContent = soundEnabled ? '🔊 Sound On' : '🔇 Muted';
+    }
+
+    function beep(hi) {
+      if (!soundEnabled) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const a = new AudioCtx();
+        const o = a.createOscillator();
+        const g = a.createGain();
+        o.frequency.value = hi ? 880 : 440;
+        g.gain.value = 0.15;
+        o.connect(g);
+        g.connect(a.destination);
+        o.start();
+        o.stop(a.currentTime + 0.25);
+      } catch(e){}
+    }
+
+    // Units
+    const UNITS = {
+      P: { l: 'mg/L as P', f: c => c, d: 3 },
+      PO4: { l: 'mg/L as PO₄³⁻', f: c => c * 3.066, d: 3 },
+      pct: { l: '% w/v as P', f: c => c / 10000, d: 5 },
+      fs: { l: '% of Top Standard', f: (c, max) => (c / (max || 5)) * 100, d: 1 },
+      ww: { l: '% w/w as P', f: c => c / 10000, d: 4 },
+      mgg: { l: 'mg/g as P', f: c => c / 1000, d: 3 }
+    };
+
+    function changeUnit(u) {
+      unit = u;
+      document.getElementById('dispUnit').textContent = UNITS[u].l;
+      document.getElementById('presUnit').textContent = UNITS[u].l;
+      updateUI();
+    }
+
+    // Regression Fitting
+    function fitLine() {
+      const pts = standards.filter(p => Number.isFinite(p.s) && Number.isFinite(p.c));
+      if (pts.length < 2) return null;
+      let m, b;
+      if (forceZero) {
+        const sxy = pts.reduce((a, p) => a + p.c * p.s, 0);
+        const sxx = pts.reduce((a, p) => a + p.c * p.c, 0);
+        if (!sxx) return null;
+        m = sxy / sxx;
+        b = 0;
+      } else {
+        const mx = pts.reduce((a, p) => a + p.c, 0) / pts.length;
+        const my = pts.reduce((a, p) => a + p.s, 0) / pts.length;
+        let sxx = 0, sxy = 0;
+        pts.forEach(p => {
+          sxx += (p.c - mx) ** 2;
+          sxy += (p.c - mx) * (p.s - my);
+        });
+        if (!sxx) return null;
+        m = sxy / sxx;
+        b = my - m * mx;
+      }
+      const my = pts.reduce((a, p) => a + p.s, 0) / pts.length;
+      const ssr = pts.reduce((a, p) => a + (p.s - (m * p.c + b)) ** 2, 0);
+      const sst = pts.reduce((a, p) => a + (p.s - my) ** 2, 0);
+      const r2 = sst ? Math.max(0, 1 - ssr / sst) : 1;
+      const xs = pts.map(p => p.c);
+      return { m, b, r2, n: pts.length, min: Math.min(...xs), max: Math.max(...xs) };
+    }
+
+    // Signal math
+    function calcSignals(R, G, B) {
+      const ar = blank ? -Math.log10(Math.max(R, 0.5) / Math.max(blank.R, 0.5)) : 0;
+      const ag = blank ? -Math.log10(Math.max(G, 0.5) / Math.max(blank.G, 0.5)) : 0;
+      const ab = blank ? -Math.log10(Math.max(B, 0.5) / Math.max(blank.B, 0.5)) : 0;
+      const r = R/255, g = G/255, b = B/255;
+      const mx = Math.max(r,g,b), mn = Math.min(r,g,b), d = mx - mn;
+      let h = 0;
+      if (d) {
+        h = mx === r ? ((g-b)/d)%6 : mx === g ? (b-r)/d+2 : (r-g)/d+4;
+        h *= 60;
+        if (h < 0) h += 360;
+      }
+      return {
+        R, G, B,
+        Hue: h,
+        Sat: mx ? (d/mx)*100 : 0,
+        Lum: 0.2126*R + 0.7152*G + 0.0722*B,
+        A_R: ar, A_G: ag, A_B: ab
+      };
+    }
+
+    // Camera control
+    async function toggleCamera() {
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null; track = null;
+        document.getElementById('camBtn').textContent = 'Start Camera';
+        document.getElementById('statusMsg').textContent = 'Camera disconnected.';
+        return;
+      }
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        document.getElementById('statusMsg').textContent = 'Camera not available in preview sandbox. Use "Select Preset" or "Upload Photo".';
+        return;
+      }
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: facing }, width: { ideal: 1280 } },
+          audio: false
+        });
+        stream = s;
+        vid.srcObject = s;
+        await vid.play();
+        track = s.getVideoTracks()[0];
+        document.getElementById('camBtn').textContent = 'Stop Camera';
+        document.getElementById('statusMsg').textContent = 'Camera running. Drag circle to sample LED.';
+      } catch (err) {
+        document.getElementById('statusMsg').textContent = 'Camera error (' + (err.name || 'blocked') + '). Use photo upload or preset standard.';
+      }
+    }
+
+    function flipCamera() {
+      facing = facing === 'environment' ? 'user' : 'environment';
+      if (stream) {
+        toggleCamera();
+        setTimeout(toggleCamera, 200);
+      }
+    }
+
+    async function lockExposure() {
+      if (!track) return;
+      try {
+        await track.applyConstraints({ advanced: [{ exposureMode: 'manual', whiteBalanceMode: 'manual' }] });
+        document.getElementById('statusMsg').textContent = 'Sensor locked.';
+      } catch(e) {
+        document.getElementById('statusMsg').textContent = 'Manual sensor lock not supported on this device.';
+      }
+    }
+
+    async function toggleTorch() {
+      if (!track) return;
+      torchOn = !torchOn;
+      try {
+        await track.applyConstraints({ advanced: [{ torch: torchOn }] });
+      } catch(e){}
+    }
+
+    function setRadius(v) {
+      roi.r = v / 100;
+      document.getElementById('radVal').textContent = v + '%';
+    }
+
+    function togglePlaceRef() {
+      placingRef = !placingRef;
+      document.getElementById('refBtn').textContent = placingRef ? 'Now tap white spot' : 'Place Reference Spot';
+    }
+
+    function toggleRefNorm(val) {
+      refSpot.on = val;
+    }
+
+    function toggleZero(val) {
+      forceZero = val;
+      updateUI();
+    }
+
+    function recordBlank() {
+      blank = {
+        R: currentRaw.R,
+        G: currentRaw.G,
+        B: currentRaw.B,
+        sd: { A_R: 0.0035 }
+      };
+      document.getElementById('blankInfo').textContent =
+        `Blank registered: R ${blank.R.toFixed(0)}, G ${blank.G.toFixed(0)}, B ${blank.B.toFixed(0)} (I₀ reference saved).`;
+      document.getElementById('statusMsg').textContent = 'Blank calibrated.';
+      updateUI();
+    }
+
+    // Load simulated presets
+    const PRESETS = {
+      '0.0': { rgb: [248, 245, 235], conc: 0.0 },
+      '0.2': { rgb: [214, 235, 248], conc: 0.2 },
+      '0.5': { rgb: [170, 215, 245], conc: 0.5 },
+      '1.0': { rgb: [118, 188, 238], conc: 1.0 },
+      '2.5': { rgb: [54, 140, 218], conc: 2.5 },
+      '5.0': { rgb: [22, 88, 172], conc: 5.0 },
+      'lake': { rgb: [238, 242, 246], conc: 0.038 },
+      'river': { rgb: [228, 240, 250], conc: 0.082 },
+      'farm': { rgb: [94, 172, 232], conc: 1.48 },
+      'effluent': { rgb: [186, 222, 248], conc: 0.345 }
+    };
+
+    function loadPresetSample(key) {
+      const p = PRESETS[key];
+      if (!p) return;
+      currentRaw.R = p.rgb[0];
+      currentRaw.G = p.rgb[1];
+      currentRaw.B = p.rgb[2];
+      currentRaw.sat = 0;
+      document.getElementById('statusMsg').textContent = `Loaded sample: ${key} (${p.conc} mg/L P).`;
+      updateUI();
+    }
+
+    function handleFile(input) {
+      const f = input.files[0];
+      if (!f) return;
+      const im = new Image();
+      im.onload = () => {
+        cv.width = im.naturalWidth || 640;
+        cv.height = im.naturalHeight || 480;
+        ctx.drawImage(im, 0, 0);
+        document.getElementById('statusMsg').textContent = 'Photo loaded. Tap circle to sample.';
+      };
+      im.src = URL.createObjectURL(f);
+    }
+
+    // Canvas pointer placement
+    cv.addEventListener('pointerdown', e => {
+      isPointerDown = true;
+      movePoint(e);
+      if (placingRef) {
+        placingRef = false;
+        refSpot.on = true;
+        document.getElementById('refOnBox').checked = true;
+        document.getElementById('refBtn').textContent = 'Place Reference Spot';
+      }
+    });
+    cv.addEventListener('pointermove', e => {
+      if (isPointerDown) movePoint(e);
+    });
+    window.addEventListener('pointerup', () => isPointerDown = false);
+
+    function movePoint(e) {
+      const r = cv.getBoundingClientRect();
+      const nx = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+      const ny = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+      if (placingRef) {
+        refSpot.x = nx; refSpot.y = ny;
+      } else {
+        roi.x = nx; roi.y = ny;
+      }
+    }
+
+    // Animation loop
+    function loop() {
+      const w = cv.width || 640;
+      const h = cv.height || 480;
+      if (cv.width !== w || cv.height !== h) {
+        cv.width = w; cv.height = h;
+      }
+
+      if (stream && vid.readyState >= 2) {
+        ctx.drawImage(vid, 0, 0, w, h);
+      } else {
+        // Render synthetic lab colorimeter stage with current sample RGB
+        ctx.fillStyle = '#090a14';
+        ctx.fillRect(0, 0, w, h);
+        const grad = ctx.createRadialGradient(w/2, h/2, 10, w/2, h/2, w*0.35);
+        grad.addColorStop(0, `rgb(${currentRaw.R}, ${currentRaw.G}, ${currentRaw.B})`);
+        grad.addColorStop(1, 'rgba(10,12,20,0.5)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(w/2, h/2, w*0.35, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Sampling circle
+      const cx = Math.round(roi.x * w);
+      const cy = Math.round(roi.y * h);
+      const rr = Math.max(4, Math.round(roi.r * w));
+
+      // Draw ROI circle
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(cx, cy, rr + 2, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = '#f43f5e';
+      ctx.beginPath();
+      ctx.arc(cx, cy, rr, 0, Math.PI * 2);
+      ctx.stroke();
+
+      if (refSpot.on || placingRef) {
+        const rx = Math.round(refSpot.x * w);
+        const ry = Math.round(refSpot.y * h);
+        ctx.strokeStyle = '#06b6d4';
+        ctx.beginPath();
+        ctx.arc(rx, ry, rr, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+
+    // Update UI & Calculations
+    function updateUI() {
+      const sigs = calcSignals(currentRaw.R, currentRaw.G, currentRaw.B);
+      const fit = fitLine();
+
+      // Concentration calculation
+      let concP = 0;
+      if (fit && fit.m !== 0) {
+        concP = (sigs.A_R - fit.b) / fit.m;
+      }
+      concP = Math.max(0, concP);
+
+      // Unit conversion
+      const u = UNITS[unit] || UNITS.P;
+      const dispValue = u.f(concP, fit ? fit.max : 5.0);
+
+      document.getElementById('dispVal').textContent = dispValue.toFixed(u.d);
+      document.getElementById('dispEquiv').textContent = 'PO₄³⁻: ' + (concP * 3.066).toFixed(3) + ' mg/L';
+      document.getElementById('vAR_ov').textContent = sigs.A_R.toFixed(3);
+
+      // Gauge arc fill (377 is 75% circumference)
+      const maxRef = fit && fit.max > 0 ? fit.max : 5.0;
+      const pct = Math.min(100, Math.max(0, (concP / maxRef) * 100));
+      const strokeOffset = 377 - (377 * pct) / 100;
+      document.getElementById('gaugeArc').style.strokeDashoffset = strokeOffset;
+
+      // Classification
+      const classBox = document.getElementById('classBox');
+      const classLabel = document.getElementById('classLabel');
+      const classDesc = document.getElementById('classDesc');
+
+      if (concP < 0.05) {
+        classBox.className = 'banner-box safe';
+        classLabel.textContent = 'Low / Oligotrophic';
+        classLabel.style.color = '#34d399';
+        classDesc.textContent = 'Pristine freshwater baseline (< 0.05 mg/L P). Low eutrophication potential.';
+      } else if (concP <= 0.10) {
+        classBox.className = 'banner-box mod';
+        classLabel.textContent = 'Moderate / Mesotrophic';
+        classLabel.style.color = '#c084fc';
+        classDesc.textContent = 'Normal ambient river baseline; meets standard EPA guidelines (0.05–0.10 mg/L P).';
+      } else if (concP <= 0.50) {
+        classBox.className = 'banner-box alert';
+        classLabel.textContent = 'Elevated / Eutrophic';
+        classLabel.style.color = '#f59e0b';
+        classDesc.textContent = 'Elevated phosphate loading. Stimulates algal growth and aquatic oxygen depletion.';
+      } else {
+        classBox.className = 'banner-box alert';
+        classLabel.textContent = 'Critical / Hypereutrophic';
+        classLabel.style.color = '#f43f5e';
+        classDesc.textContent = 'Excessive nutrient pollution (> 0.50 mg/L P). Likely agricultural runoff or effluent.';
+      }
+
+      // Telemetry readouts
+      document.getElementById('vAR').textContent = sigs.A_R.toFixed(3);
+      document.getElementById('vAG').textContent = sigs.A_G.toFixed(3);
+      document.getElementById('vAB').textContent = sigs.A_B.toFixed(3);
+      document.getElementById('vR').textContent = Math.round(sigs.R);
+      document.getElementById('vG').textContent = Math.round(sigs.G);
+      document.getElementById('vB').textContent = Math.round(sigs.B);
+      document.getElementById('vH').textContent = Math.round(sigs.Hue) + '°';
+      document.getElementById('vS').textContent = Math.round(sigs.Sat) + '%';
+      document.getElementById('vL').textContent = Math.round(sigs.Lum);
+      document.getElementById('swatchBox').style.backgroundColor = `rgb(${Math.round(sigs.R)}, ${Math.round(sigs.G)}, ${Math.round(sigs.B)})`;
+
+      // Cuvette visualization
+      const normC = Math.min(5, concP);
+      const t = normC / 5;
+      const cR = Math.round(245 * (1 - t) + 18 * t);
+      const cG = Math.round(245 * (1 - t) + 82 * t);
+      const cB = Math.round(230 * (1 - t) + 172 * t);
+      document.getElementById('cuvetteLiquid').style.backgroundColor = `rgb(${cR}, ${cG}, ${cB})`;
+      document.getElementById('cuvetteLabel').textContent = normC.toFixed(2) + ' mg/L';
+      document.getElementById('gradPin').style.left = (t * 100) + '%';
+      const trans = Math.max(5, Math.round(Math.pow(10, -sigs.A_R) * 100));
+      document.getElementById('cuvetteBeamOut').style.background = `rgba(244,63,94,${trans/100})`;
+      document.getElementById('transmittanceText').textContent = 'T: ' + trans + '%';
+
+      // Fit info
+      if (fit) {
+        document.getElementById('fitEq').textContent = `y = ${fit.m.toFixed(4)}x ${fit.b < 0 ? '−' : '+'} ${Math.abs(fit.b).toFixed(4)}`;
+        document.getElementById('fitR2').textContent = fit.r2.toFixed(4);
+        document.getElementById('calFitEquation').textContent = `y = ${fit.m.toFixed(4)}x ${fit.b < 0 ? '−' : '+'} ${Math.abs(fit.b).toFixed(4)}`;
+        document.getElementById('calR2Val').textContent = 'R² = ' + fit.r2.toFixed(4);
+      }
+
+      // Record telemetry history
+      historyVals.push({ t: performance.now() / 1000, val: sigs.A_R, conc: concP });
+      if (historyVals.length > 200) historyVals.shift();
+
+      drawCharts();
+      drawStandardsTable();
+      drawComparisonTable(fit);
+    }
+
+    // Chart Renderers
+    function drawCharts() {
+      // 1. Trend chart
+      const tc = document.getElementById('trendChart');
+      if (tc) {
+        const g = tc.getContext('2d');
+        const W = tc.width = tc.clientWidth || 300;
+        const H = tc.height = 170;
+        g.clearRect(0, 0, W, H);
+        if (historyVals.length > 1) {
+          const vals = historyVals.map(h => h.val);
+          const lo = Math.min(...vals) - 0.05;
+          const hi = Math.max(...vals) + 0.05;
+          g.strokeStyle = 'rgba(255,255,255,0.06)';
+          for (let i = 0; i < 4; i++) {
+            const y = 20 + (H - 40) * (i / 3);
+            g.beginPath(); g.moveTo(40, y); g.lineTo(W - 10, y); g.stroke();
+          }
+          g.strokeStyle = '#c084fc';
+          g.lineWidth = 2;
+          g.beginPath();
+          historyVals.forEach((p, idx) => {
+            const x = 40 + ((W - 50) * idx) / (historyVals.length - 1);
+            const y = 20 + (H - 40) * (1 - (p.val - lo) / (hi - lo || 1));
+            idx === 0 ? g.moveTo(x, y) : g.lineTo(x, y);
+          });
+          g.stroke();
+        }
+      }
+
+      // 2. RGB Histogram
+      const hc = document.getElementById('histoChart');
+      if (hc) {
+        const g = hc.getContext('2d');
+        const W = hc.width = hc.clientWidth || 300;
+        const H = hc.height = 170;
+        g.clearRect(0, 0, W, H);
+        const barH = 22;
+        const channels = [
+          { label: 'Red (A_R target)', val: currentRaw.R, col: '#f43f5e' },
+          { label: 'Green channel', val: currentRaw.G, col: '#10b981' },
+          { label: 'Blue transmitted', val: currentRaw.B, col: '#38bdf8' }
+        ];
+        channels.forEach((c, i) => {
+          const y = 30 + i * 44;
+          g.fillStyle = 'rgba(255,255,255,0.06)';
+          g.fillRect(40, y, W - 60, barH);
+          g.fillStyle = c.col;
+          const bw = (W - 60) * (c.val / 255);
+          g.fillRect(40, y, bw, barH);
+          g.fillStyle = '#fff';
+          g.font = '10px monospace';
+          g.fillText(c.label + ': ' + Math.round(c.val), 44, y - 6);
+        });
+      }
+
+      // 3. Calibration chart
+      const cc = document.getElementById('calChart');
+      if (cc) {
+        const g = cc.getContext('2d');
+        const W = cc.width = cc.clientWidth || 300;
+        const H = cc.height = 220;
+        g.clearRect(0, 0, W, H);
+        const pts = standards.filter(p => Number.isFinite(p.c) && Number.isFinite(p.s));
+        if (pts.length) {
+          const xs = pts.map(p => p.c);
+          const ys = pts.map(p => p.s);
+          const xMax = Math.max(5.0, ...xs);
+          const yMax = Math.max(1.0, ...ys);
+          const mapX = x => 45 + ((x / xMax) * (W - 65));
+          const mapY = y => H - 30 - ((y / yMax) * (H - 50));
+
+          g.strokeStyle = 'rgba(255,255,255,0.08)';
+          for (let i = 0; i <= 4; i++) {
+            const y = mapY((yMax * i) / 4);
+            g.beginPath(); g.moveTo(45, y); g.lineTo(W - 20, y); g.stroke();
+            g.fillStyle = '#94a3b8';
+            g.font = '9px monospace';
+            g.fillText(((yMax * i) / 4).toFixed(2), 10, y + 3);
+          }
+
+          const fit = fitLine();
+          if (fit) {
+            g.strokeStyle = '#a855f7';
+            g.lineWidth = 2.5;
+            g.beginPath();
+            g.moveTo(mapX(0), mapY(fit.b));
+            g.lineTo(mapX(xMax), mapY(fit.m * xMax + fit.b));
+            g.stroke();
+          }
+
+          pts.forEach(p => {
+            g.fillStyle = '#c084fc';
+            g.beginPath();
+            g.arc(mapX(p.c), mapY(p.s), 5, 0, Math.PI * 2);
+            g.fill();
+            g.strokeStyle = '#fff';
+            g.stroke();
+          });
+        }
+      }
+    }
+
+    function drawStandardsTable() {
+      const tbody = document.getElementById('stdsTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = standards.map((s, i) => `
+        <tr>
+          <td style="font-weight:700; color:#c084fc;">${s.c.toFixed(2)} mg/L</td>
+          <td style="color:#fff;">${s.s.toFixed(4)}</td>
+          <td><button class="btn btn-danger" style="padding:2px 8px; font-size:10px;" onclick="removeStd(${i})">Remove</button></td>
+        </tr>
+      `).join('') || '<tr><td colspan="3" style="color:var(--mu); text-align:center;">No standards added yet.</td></tr>';
+    }
+
+    function drawComparisonTable(fit) {
+      const tbody = document.getElementById('comparisonTableBody');
+      if (!tbody) return;
+      if (!fit) {
+        tbody.innerHTML = '<tr><td colspan="5" style="color:var(--mu); text-align:center;">Calibrate with ≥ 2 standards to show accuracy comparison.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = standards.map(s => {
+        const back = (s.s - fit.b) / fit.m;
+        const err = s.c > 0 ? Math.abs((back - s.c) / s.c) * 100 : 0;
+        const acc = Math.max(0, 100 - err);
+        return `
+          <tr>
+            <td style="font-weight:700; color:#fff;">${s.c.toFixed(2)} mg/L</td>
+            <td style="color:var(--mu);">${s.s.toFixed(3)}</td>
+            <td style="color:#c084fc; font-weight:700;">${back.toFixed(3)} mg/L</td>
+            <td style="color:${err <= 5 ? '#34d399' : '#f59e0b'};">${err.toFixed(1)}%</td>
+            <td style="color:#34d399; font-weight:700;">${acc.toFixed(1)}%</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function addCurrentStandard() {
+      const inp = document.getElementById('stdInput');
+      const val = parseFloat(inp.value);
+      if (!Number.isFinite(val) || val < 0) return;
+      const sigs = calcSignals(currentRaw.R, currentRaw.G, currentRaw.B);
+      standards.push({ c: val, s: sigs.A_R, raw: { ...currentRaw } });
+      inp.value = '';
+      updateUI();
+    }
+
+    function addBlankZero() {
+      standards.push({ c: 0.0, s: 0.000, raw: { ...blank } });
+      updateUI();
+    }
+
+    function removeStd(idx) {
+      standards.splice(idx, 1);
+      updateUI();
+    }
+
+    function clearStandards() {
+      standards = [];
+      updateUI();
+    }
+
+    // Capture & Samples
+    function captureSample() {
+      const name = 'Sample ' + (samples.length + 1);
+      captureNamedSample(name);
+    }
+
+    function captureNamedSample(name) {
+      const sigs = calcSignals(currentRaw.R, currentRaw.G, currentRaw.B);
+      const fit = fitLine();
+      const concP = fit && fit.m !== 0 ? Math.max(0, (sigs.A_R - fit.b) / fit.m) : 0;
+      const u = UNITS[unit] || UNITS.P;
+      const val = u.f(concP, fit ? fit.max : 5.0);
+      let fg = 'OK';
+      if (concP >= 0.5) fg = 'HIGH';
+      else if (concP < 0.05) fg = 'LOW';
+
+      samples.push({
+        n: name || document.getElementById('snameInput').value.trim() || ('Sample ' + (samples.length + 1)),
+        v: val,
+        u: u.l,
+        sd: 0.004,
+        fg: fg,
+        time: new Date().toLocaleTimeString()
+      });
+      document.getElementById('snameInput').value = '';
+      drawSamplesTable();
+      beep(fg === 'HIGH');
+    }
+
+    function drawSamplesTable() {
+      const tbody = document.getElementById('samplesTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = samples.map((s, i) => `
+        <tr>
+          <td style="font-weight:700; color:#fff;">${s.n}</td>
+          <td style="color:#c084fc; font-weight:700;">${s.v.toFixed(3)} ${s.u}</td>
+          <td style="color:var(--mu);">± ${s.sd.toFixed(3)}</td>
+          <td><span style="padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; background:${s.fg==='HIGH'?'rgba(244,63,94,0.2)':'rgba(16,185,129,0.2)'}; color:${s.fg==='HIGH'?'#f43f5e':'#34d399'};">${s.fg}</span></td>
+          <td><button class="btn btn-danger" style="padding:2px 6px; font-size:10px;" onclick="removeSample(${i})">X</button></td>
+        </tr>
+      `).join('') || '<tr><td colspan="5" style="color:var(--mu); text-align:center;">No samples recorded yet.</td></tr>';
+    }
+
+    function removeSample(i) {
+      samples.splice(i, 1);
+      drawSamplesTable();
+    }
+
+    function clearSamples() {
+      samples = [];
+      drawSamplesTable();
+    }
+
+    function copySamplesCsv() {
+      const header = ['sample_name', 'concentration', 'unit', 'uncertainty', 'flag', 'time'];
+      const rows = samples.map(s => [s.n, s.v.toFixed(3), s.u, s.sd, s.fg, s.time].join(','));
+      const txt = [header.join(','), ...rows].join('\n');
+      document.getElementById('dataBox').value = txt;
+      navigator.clipboard.writeText(txt);
+      alert('Samples CSV copied to clipboard!');
+    }
+
+    // Incubation timer
+    function toggleTimer() {
+      if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+        document.getElementById('timerBtn').textContent = 'Start Timer';
+        document.getElementById('timerDisplay').textContent = '';
+        return;
+      }
+      const mins = parseFloat(document.getElementById('tminInput').value) || 10;
+      let left = Math.round(mins * 60);
+      document.getElementById('timerBtn').textContent = 'Cancel';
+      timerId = setInterval(() => {
+        left--;
+        if (left <= 0) {
+          clearInterval(timerId);
+          timerId = null;
+          document.getElementById('timerBtn').textContent = 'Start Timer';
+          document.getElementById('timerDisplay').textContent = 'DONE';
+          captureSample();
+          beep(false);
+          return;
+        }
+        const m = Math.floor(left / 60);
+        const s = left % 60;
+        document.getElementById('timerDisplay').textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
+      }, 1000);
+    }
+
+    // Continuous Logger
+    let logIntervalTimer = null;
+    function toggleLogging() {
+      isLogging = !isLogging;
+      document.getElementById('logBtn').textContent = isLogging ? 'Stop Logging' : 'Start Logging';
+      if (isLogging) {
+        const sec = parseInt(document.getElementById('logInterval').value) || 1;
+        logIntervalTimer = setInterval(() => {
+          const sigs = calcSignals(currentRaw.R, currentRaw.G, currentRaw.B);
+          const fit = fitLine();
+          const conc = fit ? (sigs.A_R - fit.b) / fit.m : 0;
+          logData.push({
+            t: (performance.now() / 1000).toFixed(1),
+            R: currentRaw.R.toFixed(1),
+            G: currentRaw.G.toFixed(1),
+            B: currentRaw.B.toFixed(1),
+            A_R: sigs.A_R.toFixed(4),
+            conc: conc.toFixed(4)
+          });
+          document.getElementById('logCount').textContent = logData.length + ' rows';
+        }, sec * 1000);
+      } else {
+        clearInterval(logIntervalTimer);
+      }
+    }
+
+    function exportLogCsv() {
+      const header = ['time_s', 'R', 'G', 'B', 'A_R', 'conc_mgL_P'];
+      const rows = logData.map(l => [l.t, l.R, l.G, l.B, l.A_R, l.conc].join(','));
+      const txt = [header.join(','), ...rows].join('\n');
+      document.getElementById('dataBox').value = txt;
+      navigator.clipboard.writeText(txt);
+      alert('Telemetry CSV copied to clipboard!');
+    }
+
+    function clearLog() {
+      logData = [];
+      document.getElementById('logCount').textContent = '0 rows';
+    }
+
+    function exportSetupJson() {
+      const obj = { blank, standards, unit, forceZero };
+      const str = JSON.stringify(obj, null, 2);
+      document.getElementById('dataBox').value = str;
+      navigator.clipboard.writeText(str);
+      alert('Instrument setup JSON exported and copied.');
+    }
+
+    function importSetupJson() {
+      try {
+        const obj = JSON.parse(document.getElementById('dataBox').value);
+        if (obj.blank) blank = obj.blank;
+        if (Array.isArray(obj.standards)) standards = obj.standards;
+        if (obj.unit) changeUnit(obj.unit);
+        if (typeof obj.forceZero === 'boolean') forceZero = obj.forceZero;
+        updateUI();
+        alert('Instrument setup successfully restored!');
+      } catch(e) {
+        alert('Invalid JSON in data box.');
+      }
+    }
+
+    function updatePresentation() {
+      const sigs = calcSignals(currentRaw.R, currentRaw.G, currentRaw.B);
+      const fit = fitLine();
+      const concP = fit && fit.m !== 0 ? Math.max(0, (sigs.A_R - fit.b) / fit.m) : 0;
+      const u = UNITS[unit] || UNITS.P;
+      document.getElementById('presVal').textContent = u.f(concP, fit ? fit.max : 5).toFixed(u.d);
+      if (fit) {
+        document.getElementById('presEq').textContent = `y = ${fit.m.toFixed(4)}x ${fit.b < 0 ? '−' : '+'} ${Math.abs(fit.b).toFixed(4)}`;
+        document.getElementById('presR2').textContent = fit.r2.toFixed(4);
+      }
+      document.getElementById('presClass').textContent = concP >= 0.5 ? 'CRITICAL (HIGH PHOSPHATE)' : concP >= 0.1 ? 'ELEVATED / EUTROPHIC' : 'SAFE / OLIGOTROPHIC';
+      document.getElementById('presClass').style.color = concP >= 0.5 ? '#f43f5e' : concP >= 0.1 ? '#f59e0b' : '#34d399';
+    }
+
+    // Initial setup
+    updateUI();
+    setInterval(updateUI, 500);
+  </script>
+</body>
+</html>

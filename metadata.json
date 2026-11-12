@@ -1,0 +1,6 @@
+{
+  "name": "PHAST — Phosphate Detection and Monitoring System",
+  "description": "Scientific laboratory phosphate colorimeter platform with spectrophotometric calibration, molybdenum blue analysis, and environmental monitoring telemetry.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
